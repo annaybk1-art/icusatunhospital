@@ -921,7 +921,7 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
       <div class="tbl-wrap">
         <div style="overflow-x:auto">
           <table>
-            <thead><tr><th>ชื่อผู้ใช้</th><th>ชื่อ-สกุล</th><th>บทบาท</th><th>สถานะ</th><th>สิทธิ์การมองเห็น</th><th>สถานะบัญชี</th><th>สร้างเมื่อ</th><th>จัดการ</th></tr></thead>
+            <thead><tr><th>ชื่อผู้ใช้</th><th>ชื่อ-สกุล</th><th>บทบาท</th><th>สิทธิ์การมองเห็น</th><th>สร้างเมื่อ</th><th>จัดการ</th></tr></thead>
             <tbody id="userTbl"></tbody>
           </table>
         </div>
@@ -1570,17 +1570,24 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
         <div class="fg"><label>ชื่อผู้ใช้ *</label><input type="text" id="uUsername"></div>
         <div class="fg"><label>รหัสผ่าน *</label><input type="text" id="uPassword"></div>
         <div class="fg full"><label>ชื่อ-สกุล *</label><input type="text" id="uFullname"></div>
-        <div class="fg"><label>บทบาท</label><select id="uRole2"><option value="nurse">พยาบาล</option><option value="admin">ผู้ดูแลระบบ</option></select></div>
-        <div class="fg"><label>สถานะ</label><select id="uActive"><option value="TRUE">ใช้งานได้</option><option value="FALSE">ระงับ</option></select></div>
-        <div class="fg full">
-          <label>🔒 สิทธิ์การมองเห็น</label>
-          <select id="uViewAccess">
-            <option value="full">เข้าถึงทุกหน้า (ปกติ)</option>
-            <option value="no_opts">จำกัด — ไม่เห็น ตั้งค่า Dropdown และตกแต่งสี</option>
-            <option value="no_admin">จำกัด — ไม่เห็นเมนูจัดการระบบ</option>
-            <option value="dashboard_bedmap">จำกัด — เห็นเฉพาะ Dashboard และแผนผังเตียง</option>
-          </select>
-          <div style="font-size:10.5px;color:var(--gray500);margin-top:4px">เลือก "จำกัด" หากต้องการให้บัญชีนี้เห็นแค่หน้า Dashboard</div>
+        <div class="fg"><label>บทบาท</label><select id="uRole2" onchange="msdClose('permMsdWrap');renderPermChecks(this.value)"><option value="nurse">พยาบาล</option><option value="doctor">แพทย์</option><option value="admin">ผู้ดูแลระบบ</option></select></div>
+        
+        <div class="fg full" id="permBox">
+          <label>🔒 จำกัดเมนู</label>
+          <div class="msd-wrap" id="permMsdWrap">
+            <div class="msd-btn" onclick="msdToggle('permMsdWrap')">
+              <span class="msd-display" id="permMsdDisplay">-- ไม่จำกัด --</span>
+              <span class="msd-arrow">▾</span>
+            </div>
+            <div class="msd-list" id="permMsdWrap-list">
+              <div class="msd-items" id="permMsd"></div>
+              <div class="msd-footer">
+                <button type="button" class="btn btn-outline btn-sm" onclick="clearPermMsd();event.stopPropagation()">ล้าง</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="msdClose('permMsdWrap');event.stopPropagation()">ตกลง</button>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="uViewAccess" value="">
         </div>
       </div>
     </div>
@@ -1632,7 +1639,7 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
 // ============================================================
 // CONFIG & API
 // ============================================================
-const _DEFAULT_URL='https://script.google.com/macros/s/AKfycbziWvKE4mxTQXwl3I4bc5OX8XHfBtIxlJEXRVVELVPzTUyAu0ueri6bZCDcxwoFBX3SpQ/exec';
+const _DEFAULT_URL='https://script.google.com/macros/s/AKfycbwW1PT5MMVQ2_JBq-vdUnD7b5Ijz6tCDmMpx1BHgse071c_y0ALZqcxMZJwt4uTh1tV0g/exec';
 let API_URL = localStorage.getItem('icu_api_url')||_DEFAULT_URL;
 if(!localStorage.getItem('icu_api_url')) localStorage.setItem('icu_api_url',_DEFAULT_URL);
 
@@ -1794,8 +1801,8 @@ const _dashCache={};
 // INIT
 // ============================================================
 window.onload=async function(){
-  loadThemeFromStorage(); // ใช้ค่าที่ cache ไว้ทันที (กันกระพริบ)
-  loadMarqueeFromStorage(); // โหลดแถบข้อความจาก cache ทันที
+  loadThemeFromStorage();
+  loadMarqueeFromStorage();
   setTimeout(initStickyScroll, 300);
   setupYears();
   const sess=JSON.parse(sessionStorage.getItem('icu_sess')||'null');
@@ -1911,6 +1918,7 @@ async function doLogin(){
     try{await loadMarqueeFromServer();}catch(e){}
     loadNewsBoardSettings();
     showApp(user);
+  initAutoLogout();
   }catch(e){
     let msg=e.message||'เกิดข้อผิดพลาด';
     if(msg.includes('fetch')||msg.includes('network')||msg.includes('Failed')) msg='เชื่อมต่อ API ไม่ได้ — กรุณาตรวจสอบ URL';
@@ -1934,7 +1942,7 @@ function showApp(user){
   const init=(user.fullname||'U').replace(/นาง(สาว)?|นาย|พญ\.|นพ\./g,'').trim().charAt(0)||'U';
   document.getElementById('uAv').textContent=init;
   document.getElementById('uName').textContent=user.fullname;
-  document.getElementById('uRole').textContent=user.role==='admin'?'👑 ผู้ดูแลระบบ':'👩‍⚕️ พยาบาล';
+  document.getElementById('uRole').textContent=user.role==='admin'?'👑 ผู้ดูแลระบบ':user.role==='doctor'?'👨‍⚕️ แพทย์':'👩‍⚕️ พยาบาล';
   if(user.role==='admin'){
     const adminNav=document.getElementById('adminNav');
     const adminMenuItems=document.getElementById('adminMenuItems');
@@ -1946,9 +1954,11 @@ function showApp(user){
     });
   }
   showEditButtonIfAdmin();
-  if(user.viewAccess==='no_opts'){
-    ['nav-opts','nav-theme'].forEach(id=>{
-      const el=document.getElementById(id);
+  // apply hidden menus จาก checkbox
+  if(user.hiddenMenus){
+    const hidden=typeof user.hiddenMenus==='string'?JSON.parse(user.hiddenMenus||'[]'):user.hiddenMenus||[];
+    hidden.forEach(id=>{
+      const el=document.getElementById('nav-'+id);
       if(el) el.style.display='none';
     });
   }
@@ -1959,8 +1969,7 @@ function showApp(user){
       if(el) el.style.display='none';
     });
   }
-  if(user.viewAccess==='dashboard_bedmap'){
-    // เห็นแค่ Dashboard และแผนผังเตียง
+  if(user.role==='doctor'||user.viewAccess==='dashboard_bedmap'){
     document.getElementById('nav-patients').style.display='none';
     document.getElementById('nav-ic').style.display='none';
     document.getElementById('nav-monthly').style.display='none';
@@ -1970,6 +1979,22 @@ function showApp(user){
     document.getElementById('nav-dashboard').classList.add('active');
     loadDash(); loadLog(); return;
   }
+  // apply hidden menus
+  try{
+    const perms=(user.viewAccess||'').split(',').filter(Boolean);
+    perms.forEach(p=>{
+      if(p==='no_patients') document.getElementById('nav-patients').style.display='none';
+      if(p==='no_ic') document.getElementById('nav-ic').style.display='none';
+      if(p==='no_monthly') document.getElementById('nav-monthly').style.display='none';
+      if(p==='no_yearly') document.getElementById('nav-yearly').style.display='none';
+      if(p==='no_dashboard') document.getElementById('nav-dashboard').style.display='none';
+      if(p==='no_bedmap') document.getElementById('nav-bedmap').style.display='none';
+      if(p==='no_opts') document.getElementById('nav-opts').style.display='none';
+      if(p==='no_theme') document.getElementById('nav-theme').style.display='none';
+      if(p==='no_users') document.getElementById('nav-users').style.display='none';
+      if(p==='no_carryover') document.getElementById('nav-carryover').style.display='none';
+    });
+  }catch(e){}
   // โหลดหน้าเดิมที่เคยอยู่
   const lastSec=localStorage.getItem('icu_last_sec')||'patients';
   const lastNavEl=document.getElementById('nav-'+lastSec);
@@ -2092,6 +2117,20 @@ async function doCarryOver(){
   }
 }
 
+// ── Auto Logout 30 นาที ──────────────────────────────────
+let _autoLogoutTimer=null,_autoWarnTimer=null;
+const AUTO_LOGOUT_MS=30*60*1000;
+function resetAutoLogout(){
+  clearTimeout(_autoLogoutTimer);clearTimeout(_autoWarnTimer);
+  if(!currentUser)return;
+  _autoWarnTimer=setTimeout(()=>{if(currentUser)toast('⚠️ จะออกจากระบบใน 5 นาที หากไม่ใช้งาน');},25*60*1000);
+  _autoLogoutTimer=setTimeout(()=>{if(currentUser){toast('⏰ หมดเวลาใช้งาน กรุณา Login ใหม่');setTimeout(()=>doLogout(),1500);}},AUTO_LOGOUT_MS);
+}
+function initAutoLogout(){
+  ['click','keydown','touchstart','scroll','mousemove'].forEach(ev=>document.addEventListener(ev,resetAutoLogout,{passive:true}));
+  resetAutoLogout();
+}
+
 async function doLogout(){
   if(currentUser) await api('writeLog',{},{user:currentUser.fullname,action:'ออกจากระบบ'}).catch(()=>{});
   sessionStorage.removeItem('icu_sess');
@@ -2104,6 +2143,7 @@ document.getElementById('inPass').addEventListener('keypress',e=>{if(e.key==='En
 // LOG
 // ============================================================
 let _adminUsernames=[];
+let _allUsers=[];
 
 async function loadLog(){
   const logBox=document.querySelector('.log-box');
@@ -2948,6 +2988,16 @@ function nextPg(){if(_curPg<Math.ceil(_filtPts.length/pgSz)){_curPg++;renderTbl(
 function fmtDate(v){if(!v)return'';try{const d=new Date(v);return isNaN(d)?String(v):d.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){return String(v);}}
 function esc(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
 function di(v){if(!v)return'';try{const d=new Date(v);return isNaN(d)?'':(d.toISOString().split('T')[0]);}catch(e){return'';}}
+function icDays(pts,startKey,endKey){
+  const today=new Date().toISOString().split('T')[0];
+  return pts.reduce((sum,p)=>{
+    if(!p[startKey]) return sum;
+    const s2=parseDate(p[startKey]);
+    const e=parseDate(p[endKey]||today);
+    if(!s2||!e) return sum;
+    return sum+Math.max(1,Math.round((e-s2)/864e5));
+  },0);
+}
 function parseDate(s){
   if(!s) return null;
   const str=String(s).trim();
@@ -4136,11 +4186,13 @@ async function renderUsers(){
   if(!requireAdmin())return;showLoad('กำลังโหลดผู้ใช้...');
   try{
     const users=await api('getUsers');
+    _allUsers=users;
+    localStorage.setItem('icu_users_cache',JSON.stringify(users));
     document.getElementById('userTbl').innerHTML=users.map(u=>{
       const isLim=u.viewAccess==='dashboard_bedmap';
       const status=u.status||'approved';
       const roleLabel=u.role==='admin'?'👑 Admin':u.role==='doctor'?'👨‍⚕️ แพทย์':'👩‍⚕️ พยาบาล';
-      const roleBg=u.role==='admin'?'#e8f5e9':'#dbeafe';
+      const roleBg=u.role==='admin'?'#e8f5e9':u.role==='doctor'?'#e3f2fd':'#dbeafe';
       const roleColor=u.role==='admin'?'#1b5e20':'#1e40af';
       const statusCell = status==='pending'
         ? `<span style="padding:2px 8px;border-radius:9px;font-size:10.5px;font-weight:600;background:#fff3e0;color:#e65100">⏳ รออนุมัติ</span>`
@@ -4151,18 +4203,16 @@ async function renderUsers(){
         ? `<button class="btn btn-sm" style="background:#2e7d32;color:white" onclick="approveUser('${u.id}','approve')">✅ อนุมัติ</button>
            <button class="btn btn-danger btn-sm" onclick="approveUser('${u.id}','reject')">❌ ปฏิเสธ</button>`
         : '';
-      return `<tr style="${status==='pending'?'background:#fffde7':''}" >
+      return `<tr>
         <td style="font-weight:500">${u.username}</td>
         <td>${u.fullname}</td>
         <td><span style="padding:2px 8px;border-radius:9px;font-size:10.5px;font-weight:600;background:${roleBg};color:${roleColor}">${roleLabel}</span></td>
-        <td><span class="${u.active==='TRUE'||u.active==='true'?'f-green':'f-red'}">${u.active==='TRUE'||u.active==='true'?'ใช้งานได้':'ระงับ'}</span></td>
-        <td><span style="padding:2px 8px;border-radius:9px;font-size:10.5px;font-weight:600;background:${isLim?'#fff3e0':'#e8f5e9'};color:${isLim?'#e65100':'#1b5e20'}">${isLim?'🔒 Dashboard เท่านั้น':'✓ เข้าถึงทุกหน้า'}</span></td>
-        <td>${statusCell}</td>
+        <td><span style="padding:2px 8px;border-radius:9px;font-size:10.5px">${u.viewAccess||'เข้าถึงทุกหน้า'}</span></td>
         <td style="font-size:10.5px;color:var(--gray500)">${fmtDate(u.created)||'-'}</td>
         <td><span style="display:flex;gap:2px;flex-wrap:wrap">
           ${approveBtn}
-          <button class="btn btn-outline btn-sm" onclick="openEditUser('${u.id}')">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="confirmDelUser('${u.id}','${esc(u.fullname)}')">🗑️</button>
+          ${u.username.toLowerCase()==='admin'?'<span style="font-size:10px;color:#9ca3af">🔒</span>':`<button class="btn btn-outline btn-sm" onclick="openEditUser('${u.id}')">✏️</button>`}
+          ${u.username.toLowerCase()==='admin'?'<span style="font-size:10px;color:#9ca3af">🔒</span>':`<button class="btn btn-danger btn-sm" onclick="confirmDelUser('${u.id}','${esc(u.fullname)}')">🗑️</button>`}
         </span></td>
       </tr>`;
     }).join('');
@@ -4181,15 +4231,95 @@ async function approveUser(id, action){
   } catch(e){ toast(e.message,true); }
   finally{ hideLoad(); }
 }
-function openAddUser(){if(!requireAdmin())return;editUserId=null;document.getElementById('umTitle').textContent='เพิ่มผู้ใช้ใหม่';['uUsername','uPassword','uFullname'].forEach(id=>document.getElementById(id).value='');document.getElementById('uRole2').value='nurse';document.getElementById('uActive').value='TRUE';document.getElementById('uViewAccess').value='full';document.getElementById('userModal').classList.add('open');}
-function openEditUser(id){if(!requireAdmin())return;editUserId=id;const users=JSON.parse(localStorage.getItem('icu_users_cache')||'[]');const u=users.find(x=>x.id===id);if(!u)return;document.getElementById('umTitle').textContent='แก้ไขผู้ใช้';document.getElementById('uUsername').value=u.username;document.getElementById('uPassword').value='';document.getElementById('uFullname').value=u.fullname;document.getElementById('uRole2').value=u.role;document.getElementById('uActive').value=(u.active==='TRUE'||u.active===true)?'TRUE':'FALSE';document.getElementById('uViewAccess').value=u.viewAccess==='dashboard_only'?'dashboard_only':'full';document.getElementById('userModal').classList.add('open');}
+const PERM_MENUS={
+  nurse:[
+    {value:'no_patients',label:'ปิด รายชื่อผู้ป่วย'},
+    {value:'no_ic',label:'ปิด ข้อมูล IC'},
+    {value:'no_monthly',label:'ปิด รายเดือน'},
+    {value:'no_yearly',label:'ปิด รายปี'},
+    {value:'no_dashboard',label:'ปิด Dashboard'},
+    {value:'no_bedmap',label:'ปิด แผนผังเตียง'},
+  ],
+  doctor:[],
+  admin:[
+    {value:'no_opts',label:'ปิด ตั้งค่า Dropdown'},
+    {value:'no_theme',label:'ปิด ตกแต่งสี'},
+    {value:'no_users',label:'ปิด จัดการผู้ใช้'},
+    {value:'no_carryover',label:'ปิด ยกยอดเดือน'},
+  ],
+};
+
+function renderPermChecks(role,currentVal=''){
+  const msd=document.getElementById('permMsd');
+  const menus=PERM_MENUS[role]||[];
+  const selected=(currentVal||'').split(',').filter(Boolean);
+  if(!menus.length){
+    msd.innerHTML='<div style="padding:8px;font-size:12px;color:#9ca3af">ไม่มีตัวเลือกสำหรับ role นี้</div>';
+    document.getElementById('permMsdDisplay').textContent='-- ไม่มีตัวเลือก --';
+    return;
+  }
+  msd.innerHTML=menus.map(m=>`<label class="msd-item"><input type="checkbox" value="${m.value}" ${selected.includes(m.value)?'checked':''} onchange="updatePermVal()"><span>${m.label}</span></label>`).join('');
+  updatePermVal();
+}
+
+function updatePermVal(){
+  const checks=document.querySelectorAll('#permMsd input[type=checkbox]');
+  const selected=[...checks].filter(c=>c.checked).map(c=>c.value);
+  document.getElementById('uViewAccess').value=selected.join(',');
+  const labels=selected.map(v=>{
+    const menus=Object.values(PERM_MENUS).flat();
+    return menus.find(m=>m.value===v)?.label||v;
+  });
+  document.getElementById('permMsdDisplay').textContent=labels.length?labels.join(', '):'-- ไม่จำกัด --';
+}
+
+function clearPermMsd(){
+  document.querySelectorAll('#permMsd input[type=checkbox]').forEach(c=>c.checked=false);
+  updatePermVal();
+}
+
+function getHiddenMenus(){return [];}
+
+function openAddUser(){
+  if(!requireAdmin())return;
+  editUserId=null;
+  document.getElementById('umTitle').textContent='เพิ่มผู้ใช้ใหม่';
+  ['uUsername','uPassword','uFullname'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('uRole2').value='nurse';
+  renderPermChecks('nurse');
+  document.getElementById('userModal').classList.add('open');
+}
+async function openEditUser(id){
+  if(!requireAdmin())return;
+  editUserId=id;
+  let users=_allUsers||[];
+  if(!users.length){
+    try{users=await api('getUsers');_allUsers=users;}catch(e){}
+  }
+  const u=users.find(x=>x.id===id);
+  if(!u){toast('ไม่พบข้อมูลผู้ใช้',true);return;}
+  document.getElementById('umTitle').textContent='แก้ไขผู้ใช้';
+  document.getElementById('uUsername').value=u.username||'';
+  document.getElementById('uPassword').value='';
+  document.getElementById('uFullname').value=u.fullname||'';
+  document.getElementById('uRole2').value=u.role||'nurse';
+  renderPermChecks(u.role||'nurse',u.viewAccess||'');
+  document.getElementById('userModal').classList.add('open');
+}
 function closeUserModal(){document.getElementById('userModal').classList.remove('open');}
 async function saveUser(){
   if(!requireAdmin())return;
-  const uname=document.getElementById('uUsername').value.trim(),pwd=document.getElementById('uPassword').value.trim(),fname=document.getElementById('uFullname').value.trim(),role=document.getElementById('uRole2').value,active=document.getElementById('uActive').value,viewAccess=document.getElementById('uViewAccess').value;
+  const uname=document.getElementById('uUsername').value.trim(),pwd=document.getElementById('uPassword').value.trim(),fname=document.getElementById('uFullname').value.trim(),role=document.getElementById('uRole2').value,active='TRUE',viewAccess=document.getElementById('uViewAccess').value||'full',hiddenMenus=JSON.stringify([]);
   if(!uname||!fname){toast('กรุณากรอกชื่อผู้ใช้และชื่อ-สกุล',true);return;}
   showLoad('กำลังบันทึก...');
-  try{const data={username:uname,fullname:fname,role,active,viewAccess};if(pwd)data.password=pwd;if(editUserId)await api('saveUser',{},{id:editUserId,data});else{if(!pwd){toast('กรุณากรอกรหัสผ่าน',true);hideLoad();return;}await api('saveUser',{},{data});}closeUserModal();toast('บันทึกสำเร็จ ✓');await renderUsers();}
+  try{
+    const data={username:uname,fullname:fname,role,active,viewAccess:viewAccess||'',hiddenMenus:hiddenMenus||''};
+    if(pwd)data.password=pwd;
+    const sp=editUserId?{id:editUserId,...data}:{...data};
+    await api('saveUser',sp,null);
+    if(!editUserId&&!pwd){toast('กรุณากรอกรหัสผ่าน',true);hideLoad();return;}
+    closeUserModal();toast('บันทึกสำเร็จ ✓');await renderUsers();
+  }
   catch(e){toast(e.message,true);}finally{hideLoad();}
 }
 function confirmDelUser(id,name){document.getElementById('confMsg').textContent=`ต้องการลบผู้ใช้ "${name}" ใช่หรือไม่?`;document.getElementById('confBtn').onclick=async()=>{closeConf();showLoad('กำลังลบ...');try{await api('deleteUser',{},{id});toast('ลบสำเร็จ ✓');await renderUsers();}catch(e){toast(e.message,true);}finally{hideLoad();}};document.getElementById('confDlg').classList.add('open');}
@@ -4902,7 +5032,97 @@ async function loadIC(){
 async function loadMonthly(){
   const m=parseInt(document.getElementById('mMonth').value),y=parseInt(document.getElementById('mYear').value);
   showLoad('กำลังโหลด...');let pts=[];try{pts=await fetchMonthPts(m,y);}catch(e){toast(e.message,true);}finally{hideLoad();}
-  document.getElementById('mContent').innerHTML=`<div class="dash-card-title">📊 สรุปประจำเดือน ${MONTHS_TH[m-1]} ${y}</div>${buildSumTable(getStats(pts),'',pts)}`;
+  const s=getStats(pts);
+  const daysInMonth=new Date(y,m,0).getDate();
+  const newAdmit=pts.filter(p=>p['การรับ']==='รับใหม่').length;
+  const transferIn=pts.filter(p=>p['การรับ']==='รับย้าย').length;
+  const carryIn=pts.filter(p=>p['การรับ']==='ยกมา').length;
+  const carryOut=pts.filter(p=>p['สถานะ']==='ค้างเดือน').length;
+  const totalAdmit=newAdmit+transferIn+carryIn;
+  const totalDC=s.discharged;
+  const moveWellTotal=s.moveWell+s.moveBed;
+  const avgPerDay=s.totalDays?(s.totalDays/daysInMonth).toFixed(1):0;
+  const occupancy=s.totalDays?(s.totalDays/(TOTAL_BEDS*daysInMonth)*100).toFixed(1):0;
+  const mortalityRate=totalDC?(s.deadCount/totalDC*100).toFixed(1):0;
+
+  const row=(label,val,bold=false)=>`<tr>
+    <td style="padding:7px 12px;border-bottom:1px solid #f3f4f6;color:#374151">${label}</td>
+    <td style="padding:7px 12px;border-bottom:1px solid #f3f4f6;text-align:center;font-weight:${bold?'700':'500'};color:${bold?'#2e7d32':'#111'}">${val}</td>
+  </tr>`;
+  const divider=`<tr><td colspan="2" style="padding:0;background:#e8f5e9;height:3px"></td></tr>`;
+
+  const sumTable=`<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="background:#2e7d32;color:white">
+      <th style="padding:9px 12px;text-align:left">รายการ</th>
+      <th style="padding:9px 12px;text-align:center;width:80px">จำนวน</th>
+    </tr></thead>
+    <tbody>
+      ${row('ยอดผู้ป่วย (คน)',totalAdmit,true)}
+      ${row('ยกมา',carryIn)}
+      ${row('ค้างเดือน',carryOut)}
+      ${row('จน.วันนอน รพ. (วัน)',s.totalDays)}
+      ${row('รับใหม่',newAdmit)}
+      ${row('รับย้าย',transferIn)}
+      ${row('รวมยอดรับผู้ป่วย',totalAdmit,true)}
+      ${divider}
+      ${row('ทุเลาย้าย',s.moveWell)}
+      ${row('ต้องการเตียงย้าย',s.moveBed)}
+      ${row('รวมผู้ป่วยย้าย Ward',moveWellTotal,true)}
+      ${row('ทุเลากลับบ้าน',pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'home')||String(p['เหตุผลจำหน่าย']||'').includes('กลับบ้าน')).length)}
+      ${row('Refer',s.referCount)}
+      ${row('Palliative D/C',s.palliativeDC)}
+      ${row('ไม่สมัครใจอยู่',s.noConsent)}
+      ${row('ผู้ป่วยเสียชีวิต',s.deadCount)}
+      ${row('อัตราการเสียชีวิต (%)',mortalityRate+'%')}
+      ${row('รวมผู้ป่วยจำหน่าย',totalDC,true)}
+      ${divider}
+      ${row('Med',pts.filter(p=>(p['ประเภทผู้ป่วย']||'').toUpperCase()==='MED').length)}
+      ${row('Surg',pts.filter(p=>(p['ประเภทผู้ป่วย']||'').toUpperCase()==='SURG').length)}
+      ${row('Neuro.Surg',pts.filter(p=>(p['ประเภทผู้ป่วย']||'').toLowerCase().includes('neuro')).length)}
+      ${row('Ortho',pts.filter(p=>(p['ประเภทผู้ป่วย']||'').toLowerCase().includes('ortho')).length)}
+      ${row('Obs',pts.filter(p=>(p['ประเภทผู้ป่วย']||'').toLowerCase().includes('obs')).length)}
+      ${row('Gynea',pts.filter(p=>(p['ประเภทผู้ป่วย']||'').toLowerCase().includes('gyn')).length)}
+      ${row('Maxillo',pts.filter(p=>(p['ประเภทผู้ป่วย']||'').toLowerCase().includes('maxillo')).length)}
+      ${row('ENT',pts.filter(p=>(p['ประเภทผู้ป่วย']||'').toUpperCase()==='ENT').length)}
+      ${row('PED',pts.filter(p=>(p['ประเภทผู้ป่วย']||'').toUpperCase()==='PED').length)}
+      ${row('Plastic',pts.filter(p=>(p['ประเภทผู้ป่วย']||'').toLowerCase().includes('plastic')).length)}
+      ${divider}
+      ${row('เฉลี่ยนอน รพ. วันละ (คน)',avgPerDay)}
+      ${row('เฉลี่ยนอน รพ. คนละ (วัน)',s.avgDaysPerPt)}
+      ${row('อัตราการครองเตียง (%)',occupancy+'%',true)}
+      ${divider}
+      ${row('Case ผ่าตัด',s.surgCount)}
+      ${row('CPR',s.cprCount)}
+      ${row('Palliative care',s.pallCount)}
+      ${row('Unplanned ICU',s.unplannedCount)}
+      ${row('Re-admit ICU',s.readmitCount)}
+      ${divider}
+      <tr><td colspan="2" style="padding:8px 12px;background:#1b5e20;color:white;font-weight:700;font-size:13px">🩺 Invasive Care (IC)</td></tr>
+      ${row('Ventilator (ราย)',pts.filter(p=>p['Ventilator (Start)']).length)}
+      ${row('Ventilator (วัน)',icDays(pts,'Ventilator (Start)','Ventilator (End)'))}
+      ${row('A-Line (ราย)',pts.filter(p=>p['A-Line (Start)']).length)}
+      ${row('A-Line (วัน)',icDays(pts,'A-Line (Start)','A-Line (End)'))}
+      ${row('C-Line (ราย)',pts.filter(p=>p['C-Line (Start)']).length)}
+      ${row('C-Line (วัน)',icDays(pts,'C-Line (Start)','C-Line (End.)'))}
+      ${row('F/C (ราย)',pts.filter(p=>p['F/C (Start)']).length)}
+      ${row('F/C (วัน)',icDays(pts,'F/C (Start)','F/C (END)'))}
+      ${row('IV (ราย)',pts.filter(p=>p['IV (Start)']).length)}
+      ${row('IV (วัน)',icDays(pts,'IV (Start)','IV (End)'))}
+      ${row('ICD (ราย)',pts.filter(p=>p['ICD (Start)']).length)}
+      ${row('ICD (วัน)',icDays(pts,'ICD (Start)','ICD (End)'))}
+      ${divider}
+      <tr><td colspan="2" style="padding:8px 12px;background:#b71c1c;color:white;font-weight:700;font-size:13px">🦠 การติดเชื้อ</td></tr>
+      ${row('VAP',s.vapCount)}
+      ${row('CAUTI',s.cautiCount)}
+      ${row('CLABSI',s.clabsiCount)}
+      ${row('SSI',s.ssiCount)}
+      ${row('MDR',s.mdrCount)}
+    </tbody>
+  </table>`;
+
+  document.getElementById('mContent').innerHTML=`
+    <div class="dash-card-title">📊 สรุปประจำเดือน ${MONTHS_TH[m-1]} ${y+543}</div>
+    <div class="dash-card" style="margin-bottom:14px;padding:0;overflow:hidden;border-radius:10px">${sumTable}</div>`;
 }
 
 async function loadYearly(){

@@ -229,7 +229,7 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
 .conf-box h3{font-size:14px;font-weight:700;margin-bottom:6px}
 .conf-box p{font-size:12px;color:var(--gray500);margin-bottom:14px}
 .conf-acts{display:flex;gap:6px;justify-content:center}
-.toast{position:fixed;bottom:70px;right:12px;z-index:999;background:#1b5e20;color:white;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(70px);opacity:0;transition:all .3s;max-width:calc(100vw - 24px)}
+.toast{position:fixed;bottom:70px;right:12px;z-index:99999;background:#1b5e20;color:white;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(70px);opacity:0;transition:all .3s;max-width:calc(100vw - 24px)}
 .toast.show{transform:translateY(0);opacity:1}
 .toast.err{background:#c62828}
 .loading-msg{text-align:center;padding:24px;color:#9ca3af;font-size:12px}
@@ -535,6 +535,111 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
     </div>
   </div>
 </div>
+<!-- RN Modal -->
+<div id="rnModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1500;align-items:center;justify-content:center;padding:16px">
+  <div style="background:white;border-radius:14px;width:min(420px,95vw);max-height:90vh;overflow-y:auto">
+    <div style="background:linear-gradient(135deg,#2e7d32,#43a047);padding:14px 16px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center">
+      <div style="color:white;font-weight:700;font-size:15px">👩‍⚕️ RN บันทึกข้อมูล</div>
+      <button onclick="closeRNModal()" style="background:rgba(255,255,255,.2);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px">×</button>
+    </div>
+    
+    <!-- เลือกเตียง -->
+    <div id="rnBedSelectBox" style="padding:16px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px;color:#374151">สวัสดี <span id="rnWelcomeName"></span> 👋</div>
+      <div style="font-size:12px;color:#6b7280;margin-bottom:12px">เลือกเตียงที่คุณดูแล</div>
+      <div id="rnBedList" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px"></div>
+      <button onclick="openRNForm()" class="btn btn-primary" style="width:100%;background:#2e7d32" id="rnStartBtn" disabled>เริ่มบันทึกข้อมูล</button>
+    </div>
+  </div>
+</div>
+
+<!-- RN Form Modal -->
+<div id="rnFormModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1500;align-items:flex-start;justify-content:center;padding:16px 16px 80px;overflow-y:auto">
+  <div style="background:white;border-radius:14px;width:min(500px,95vw);margin:auto">
+    <div style="background:linear-gradient(135deg,#2e7d32,#43a047);padding:14px 16px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center">
+      <div style="color:white;font-weight:700;font-size:14px">👩‍⚕️ RN — <span id="rnFormBedTitle"></span></div>
+      <button onclick="closeRNForm()" style="background:rgba(255,255,255,.2);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px">×</button>
+    </div>
+    <div id="rnFormContent" style="padding:16px"></div>
+    <div style="padding:0 16px 16px;display:flex;gap:8px">
+      <button onclick="saveRNData()" class="btn btn-primary" style="flex:1;background:#2e7d32">💾 บันทึก</button>
+      <button onclick="closeRNForm()" class="btn btn-outline" style="flex:1">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- Apache IV Assessment Modal -->
+<div id="apache4Modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:16px">
+  <div style="background:white;border-radius:12px;width:min(520px,95vw);max-height:90vh;overflow-y:auto;padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-weight:700;font-size:15px;color:#c62828">🏥 Apache IV Score</div>
+      <button onclick="closeApache4()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#9ca3af">×</button>
+    </div>
+    <div style="font-size:11px;color:#6b7280;background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:12px">
+      ⚠️ ประเมินจากค่าที่แย่ที่สุดใน <b>24 ชั่วโมงแรก</b>หลัง Admit ICU<br>
+      📌 ถ้าไม่ได้เจาะ Lab ตัวนั้น = ถือว่าปกติ = <b>0 คะแนน</b><br>
+      📊 คะแนนสูงสุด <b>286</b> | ยิ่งสูง = ความรุนแรงมาก = Mortality สูง
+    </div>
+    <div id="apache4Items"></div>
+    <div style="margin-top:12px;padding:12px;border-radius:8px;text-align:center" id="apache4Result">
+      <div style="font-size:16px;font-weight:700">คะแนน: <span id="apache4Total">0</span></div>
+      <div id="apache4Mortality" style="font-size:12px;color:#c62828;margin-top:4px"></div>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:8px">
+      <button onclick="closeApache4()" class="btn btn-outline" style="flex:1">ยกเลิก</button>
+      <button onclick="saveApache4()" class="btn btn-primary" style="flex:1;background:#c62828">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEWS2 Assessment Modal -->
+<div id="news2Modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:16px">
+  <div style="background:white;border-radius:12px;width:min(500px,95vw);max-height:90vh;overflow-y:auto;padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-weight:700;font-size:15px;color:#1565c0">📊 แบบประเมิน NEWS2</div>
+      <button onclick="closeNews2Assess()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#9ca3af">×</button>
+    </div>
+    <div id="news2Items"></div>
+    <div style="margin-top:12px;padding:12px;border-radius:8px;text-align:center" id="news2Result">
+      <div style="font-size:16px;font-weight:700">คะแนนรวม: <span id="news2Total">0</span>/20</div>
+      <div id="news2Interpret" style="font-size:12px;margin-top:4px"></div>
+    </div>
+    <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+      <input type="text" id="news2Assessor" placeholder="ชื่อผู้ประเมิน..." style="padding:8px;border:1.5px solid var(--g200);border-radius:8px;font-size:12px">
+      <div style="display:flex;gap:8px">
+        <input type="date" id="news2Date" style="flex:1;padding:8px;border:1.5px solid var(--g200);border-radius:8px;font-size:12px">
+        <button onclick="saveNews2Assess()" class="btn btn-primary" style="flex:1;background:#1565c0">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ICDSC Assessment Modal -->
+<div id="icdscModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:16px">
+  <div style="background:white;border-radius:12px;width:min(500px,95vw);max-height:90vh;overflow-y:auto;padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-weight:700;font-size:15px;color:#1b5e20">🧠 แบบประเมิน ICDSC</div>
+      <button onclick="closeIcdscAssess()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#9ca3af">×</button>
+    </div>
+    <div style="font-size:11px;color:#6b7280;background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:12px">
+      ⚠️ ประเมินผู้ป่วยในแต่ละเวร/วัน · ข้อ 1-4 ประเมิน ณ ขณะนั้น · ข้อ 5-8 จากข้อมูลย้อนหลัง 24 ชม.
+    </div>
+    <div id="icdscItems"></div>
+    <div style="margin-top:12px;padding:12px;border-radius:8px;text-align:center" id="icdscResult">
+      <div style="font-size:14px;font-weight:700">คะแนนรวม: <span id="icdscTotal">0</span>/8</div>
+      <div id="icdscInterpret" style="font-size:12px;margin-top:4px"></div>
+    </div>
+    <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+      <input type="text" id="icdscAssessor" placeholder="ชื่อผู้ประเมิน..." 
+        style="padding:8px;border:1.5px solid var(--g200);border-radius:8px;font-size:12px">
+      <div style="display:flex;gap:8px">
+        <input type="date" id="icdscAssessDate" style="flex:1;padding:8px;border:1.5px solid var(--g200);border-radius:8px;font-size:12px">
+        <button onclick="saveIcdscAssess()" class="btn btn-primary" style="flex:1">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="appPage">
   <div class="topbar">
     <div class="topbar-l">
@@ -575,11 +680,13 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>ข้อมูล IC
     </div>
     <div class="nav-sec">สถิติ</div>
-    <div class="nav-item" id="nav-monthly" onclick="showSec('monthly',this)">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>รายเดือน
+
+
+    <div class="nav-item" id="nav-kpi" onclick="showSec('kpi',this)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>KPI & ตัวชี้วัด
     </div>
-    <div class="nav-item" id="nav-yearly" onclick="showSec('yearly',this)">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>รายปี
+    <div class="nav-item" id="nav-disease" onclick="showSec('disease',this)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>ตัวชี้วัดรายโรค
     </div>
     <div class="nav-sec" id="adminNav" style="display:none;cursor:pointer;user-select:none" onclick="toggleAdminMenu()">
       ⚙️ จัดการระบบ <span id="adminMenuArrow" style="margin-left:auto;font-size:10px">▶</span>
@@ -701,15 +808,26 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
           <div class="tbl-title" id="ptTblTitle">รายชื่อผู้ป่วย</div>
           <div class="search-wrap">
             <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-            <input type="text" id="srch" placeholder="ค้นหา HN, ชื่อ, Dx..." oninput="applyFilter()">
+            <select id="srchField" onchange="applyFilter()" class="sel-sm" style="font-size:11px">
+              <option value="all">ทั้งหมด</option>
+              <option value="name">ชื่อ-สกุล</option>
+              <option value="hn">HN</option>
+              <option value="dx">Dx (โรค)</option>
+              <option value="doctor">แพทย์</option>
+              <option value="ud">U/D</option>
+              <option value="bed">เตียง</option>
+              <option value="dc">เหตุผลจำหน่าย</option>
+              <option value="infection">การติดเชื้อ</option>
+            </select>
+            <input type="text" id="srch" placeholder="ค้นหา..." oninput="applyFilter()">
           </div>
         </div>
         <div id="ptTblWrap" style="overflow-x:auto;max-height:calc(100vh - 300px);overflow-y:auto">
           <table>
             <thead><tr>
-              <th>#</th><th>Admit</th><th>เวลา</th><th>เตียง</th><th>ชื่อ-สกุล</th><th>HN</th>
+              <th>#</th><th>ลำดับปี</th><th>Admit</th><th>เวลา</th><th>เตียง</th><th>ชื่อ-สกุล</th><th>HN</th>
               <th>อายุ</th><th>U/D</th><th>Dx แรกรับ</th><th>แพทย์</th><th>ประเภท</th>
-              <th>D/C</th><th>วันนอน</th><th>เหตุผล DC</th><th>Falling</th><th>สถานะ</th><th>จัดการ</th>
+              <th>D/C</th><th>วันนอน</th><th>เหตุผล DC</th><th>ผู้บันทึก D/C</th><th>Apache IV</th><th>Bedsore</th><th>Falling</th><th>สถานะ</th><th>จัดการ</th>
             </tr></thead>
             <tbody id="ptTbl"><tr><td colspan="17" class="loading-msg">กำลังโหลด...</td></tr></tbody>
           </table>
@@ -741,19 +859,16 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
         <div class="tbl-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
           <div class="tbl-title">🛏️ ผู้ป่วยที่กำลัง Admit</div>
           <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <button class="btn btn-primary" id="rnBtn" onclick="openRNMode()" style="display:none;background:linear-gradient(135deg,#2e7d32,#43a047);font-size:12px;padding:6px 14px">👩‍⚕️ RN</button>
             <button class="btn btn-primary" onclick="openInCharge()" style="background:linear-gradient(135deg,#1565c0,#1e88e5);font-size:12px;padding:6px 14px">📋 In Charge</button>
-            <button class="btn btn-outline btn-sm" onclick="toggleBedTblCols()" title="ซ่อน/แสดงคอลัมน์">⚙️ คอลัมน์</button>
           </div>
-        </div>
-        <!-- ตัวเลือกคอลัมน์ -->
-        <div id="bedTblColPanel" style="display:none;padding:8px 12px;background:#f9fafb;border-bottom:1px solid var(--g100);flex-wrap:wrap;gap:8px">
-          ${['SOS','ประเภท','ยา HD','การหายใจ','A-Line','C-Line','IV','F/C','ICD','หมอ','พยาบาล'].map(c=>`<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" checked onchange="setBedCol('${c}',this.checked)"> ${c}</label>`).join('')}
         </div>
         <div style="overflow-x:auto">
           <table id="bedAdmitTbl">
             <thead><tr>
               <th>เตียง</th><th>Admit</th><th>เพศ</th><th>อายุ</th><th>แผนก</th>
               <th>Dx</th><th>U/D</th>
+              <th class="bc-Apache">Apache IV</th>
               <th class="bc-SOS">SOS</th>
               <th class="bc-ประเภท">ประเภท</th>
               <th class="bc-ยา HD">💊 ยา HD</th>
@@ -763,6 +878,8 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
               <th class="bc-IV">🩸 IV</th>
               <th class="bc-F/C">🪠 F/C</th>
               <th class="bc-ICD">🩺 ICD</th>
+              <th class="bc-ICDSC">🧠 ICDSC</th>
+              <th class="bc-PI">🩹 Bedsore</th>
               <th class="bc-หมอ">👨‍⚕️ แพทย์</th>
               <th class="bc-พยาบาล">👩‍⚕️ พยาบาล</th>
             </tr></thead>
@@ -884,26 +1001,79 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
         <div style="overflow-x:auto">
           <table><thead><tr>
             <th>ชื่อ-สกุล</th><th>HN</th><th>Ventilator</th><th>Vent Day</th>
-            <th>A-Line Day</th><th>C-Line Day</th><th>F/C Day</th><th>ICD Day</th>
+            <th>A-Line Day</th><th>C-Line Day</th><th>IV Day</th><th>F/C Day</th><th>ICD Day</th>
             <th>VAP</th><th>CAUTI</th><th>CLABSI</th><th>SSI</th><th>MDR</th><th>เชื้อ</th>
           </tr></thead>
-          <tbody id="icTbl"><tr><td colspan="14" class="loading-msg">เลือกเดือนแล้วกด "แสดงข้อมูล"</td></tr></tbody>
+          <tbody id="icTbl"><tr><td colspan="15" class="loading-msg">เลือกเดือนแล้วกด "แสดงข้อมูล"</td></tr></tbody>
           </table>
         </div>
       </div>
     </div>
 
     <!-- MONTHLY -->
-    <div class="sec" id="sec-monthly">
-      <div class="fbar">
-        <label>เดือน:</label><select id="mMonth"></select>
-        <label>ปี:</label><select id="mYear"></select>
-        <button class="btn btn-primary" onclick="loadMonthly()">แสดงข้อมูล</button>
-      </div>
-      <div id="mContent" class="dash-card"></div>
-    </div>
+
 
     <!-- YEARLY -->
+    <div class="sec" id="sec-disease">
+      <div class="sec-header">
+        <div class="sec-title">🏥 ตัวชี้วัดรายโรค</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="diseasePeriod" class="sel-sm" onchange="toggleDiseasePeriod(this.value)">
+            <option value="month">รายเดือน</option>
+            <option value="year">รายปีงบ</option>
+          </select>
+          <div id="diseaseMonthBox" style="display:flex;gap:4px">
+            <select id="diseaseMonth" class="sel-sm"></select>
+            <select id="diseaseYear" class="sel-sm"></select>
+          </div>
+          <div id="diseaseYearBox" style="display:none">
+            <select id="diseaseFiscalYear" class="sel-sm"></select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="loadDiseaseIndicator()">แสดง</button>
+        </div>
+      </div>
+      <div id="diseaseContent" style="padding:8px 0"></div>
+    </div>
+
+    <div class="sec" id="sec-kpi">
+      <div class="sec-header">
+        <div class="sec-title">📊 KPI & ตัวชี้วัด ICU</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="kpiPeriod" class="sel-sm" onchange="toggleKpiPeriod(this.value)">
+            <option value="month">รายเดือน</option>
+            <option value="year">รายปีงบ</option>
+          </select>
+          <div id="kpiMonthBox" style="display:flex;gap:4px">
+            <select id="kpiMonth" class="sel-sm"></select>
+            <select id="kpiYear" class="sel-sm"></select>
+          </div>
+          <div id="kpiYearBox" style="display:none">
+            <select id="kpiFiscalYear" class="sel-sm"></select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="loadKPI()">แสดง KPI</button>
+        </div>
+      </div>
+      <div id="kpiContent"></div>
+      <div style="margin-top:16px;border-top:2px solid var(--g100);padding-top:16px">
+        <div style="font-size:14px;font-weight:700;color:#1b5e20;margin-bottom:10px">📈 ข้อมูลสถิติ</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+          <select id="statPeriod" class="sel-sm" onchange="toggleStatPeriod(this.value)">
+            <option value="month">รายเดือน</option>
+            <option value="year">รายปีงบ</option>
+          </select>
+          <div id="statMonthBox" style="display:flex;gap:4px">
+            <select id="mMonth" class="sel-sm"></select>
+            <select id="mYear" class="sel-sm"></select>
+          </div>
+          <div id="statYearBox" style="display:none">
+            <select id="statFiscalYear" class="sel-sm"></select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="loadStatistics()">แสดงข้อมูล</button>
+        </div>
+        <div id="mContent" class="dash-card"></div>
+      </div>
+    </div>
+
     <div class="sec" id="sec-yearly">
       <div class="fbar">
         <label>ปี:</label><select id="yYear"></select>
@@ -957,19 +1127,7 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
       <!-- ── Telegram Admin ── -->
       <div class="dash-card" style="margin-bottom:16px">
         <div class="dash-card-title">🔔 Telegram แจ้งเตือน Admin</div>
-        <div class="fgrid">
-          <div class="fg full" style="grid-column:1/-1">
-            <label>Bot Token (สำหรับแจ้งเตือน Admin)</label>
-            <input type="text" id="adminTelegramToken" placeholder="Bot Token..." style="width:100%;font-family:monospace;font-size:11px">
-          </div>
-          <div class="fg full" style="grid-column:1/-1">
-            <label>Chat ID (Admin)</label>
-            <input type="text" id="adminTelegramChatId" placeholder="Chat ID ของ Admin..." style="width:100%;font-family:monospace">
-          </div>
-        </div>
-        <div style="margin-top:12px">
-          <button class="btn btn-primary" onclick="saveAdminTelegram()">💾 บันทึก</button>
-        </div>
+        <div class="opt-note">Token ถูก hardcode ใน Code.gs แล้ว ระบบแจ้งเตือนทำงานอัตโนมัติครับ</div>
         <div class="opt-note" style="margin-top:8px">แจ้งเตือนเมื่อ: มีสมาชิกใหม่รออนุมัติ / มี Dropdown รออนุมัติ</div>
       </div>
 
@@ -977,10 +1135,6 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
       <div class="dash-card" style="margin-bottom:16px">
         <div class="dash-card-title">📋 ตั้งค่า In Charge</div>
         <div class="fgrid">
-          <div class="fg full" style="grid-column:1/-1">
-            <label>LINE Notify Token <span style="font-size:10px;color:var(--gray400)">(สมัครได้ที่ notify.line.me)</span></label>
-            <input type="text" id="icLineToken" placeholder="วาง Token ที่นี่..." style="width:100%;font-family:monospace">
-          </div>
           <div class="fg"><label>เวรเช้าเริ่ม</label><input type="time" id="icShiftMorning" value="07:00"></div>
           <div class="fg"><label>เวรบ่ายเริ่ม</label><input type="time" id="icShiftAfternoon" value="15:00"></div>
           <div class="fg"><label>เวรดึกเริ่ม</label><input type="time" id="icShiftNight" value="23:00"></div>
@@ -988,49 +1142,12 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
         <div style="margin-top:12px">
           <button class="btn btn-primary" onclick="saveInChargeSettings()">💾 บันทึกตั้งค่า In Charge</button>
         </div>
-        <div class="opt-note" style="margin-top:8px">Token จะถูกบันทึกเข้า Google Sheet — ใช้ร่วมกันทั้งทีม ส่งผ่าน Apps Script (ไม่ผ่าน browser โดยตรง)</div>
       </div>
 
-      <!-- ── ตั้งค่า In Charge ── -->
+      <!-- ── ตั้งค่าระบบ In Charge (Telegram) ── -->
       <div class="dash-card" style="margin-bottom:16px">
         <div class="dash-card-title">📋 ตั้งค่าระบบ In Charge (Telegram)</div>
-        <div class="fgrid">
-          <div class="fg full" style="grid-column:1/-1">
-            <label>Telegram Bot Token
-              <a href="https://t.me/BotFather" target="_blank" style="font-size:10px;color:#2e7d32;margin-left:8px">🤖 สร้าง Bot ที่ @BotFather</a>
-            </label>
-            <input type="text" id="icTelegramToken" placeholder="110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw..." style="width:100%;font-family:monospace;font-size:11px">
-          </div>
-          <div class="fg full" style="grid-column:1/-1">
-            <label>Telegram Chat ID (กลุ่มหรือ user ที่รับข้อความ)
-              <a href="https://t.me/userinfobot" target="_blank" style="font-size:10px;color:#2e7d32;margin-left:8px">🔍 หา Chat ID ที่ @userinfobot</a>
-            </label>
-            <input type="text" id="icTelegramChatId" placeholder="-1001234567890 (กลุ่ม) หรือ 123456789 (ส่วนตัว)" style="width:100%;font-family:monospace">
-          </div>
-          <div class="fg">
-            <label>🌅 เวลาเริ่มเวรเช้า</label>
-            <input type="time" id="icShiftMorning" value="07:00">
-          </div>
-          <div class="fg">
-            <label>🌤️ เวลาเริ่มเวรบ่าย</label>
-            <input type="time" id="icShiftAfternoon" value="15:00">
-          </div>
-          <div class="fg">
-            <label>🌙 เวลาเริ่มเวรดึก</label>
-            <input type="time" id="icShiftNight" value="23:00">
-          </div>
-        </div>
-        <div style="margin-top:12px">
-          <button class="btn btn-primary" onclick="saveInChargeSettings()">💾 บันทึกตั้งค่า In Charge</button>
-        </div>
-        <div class="opt-note" style="margin-top:10px;line-height:1.8">
-          <b>วิธีตั้งค่า Telegram Bot:</b><br>
-          1. เปิด Telegram → ค้นหา <b>@BotFather</b> → พิมพ์ /newbot → ตั้งชื่อ Bot → Copy Token มาวางด้านบน<br>
-          2. เพิ่ม Bot เข้ากลุ่ม ICU แล้วส่งข้อความใดก็ได้ในกลุ่ม<br>
-          3. เปิด <b>@userinfobot</b> หรือ https://api.telegram.org/bot[TOKEN]/getUpdates เพื่อหา Chat ID<br>
-          4. Chat ID กลุ่มจะขึ้นต้นด้วย <b>-</b> เช่น -1001234567890
-        </div>
-      </div>
+        <div class="opt-note" style="margin-top:8px">Token ถูก hardcode ใน Code.gs แล้ว ระบบส่ง Telegram ทำงานอัตโนมัติครับ</div>
 
       <!-- ── ตั้งค่าแถบข้อความวิ่ง ── -->
       <div class="dash-card" style="margin-bottom:16px">
@@ -1444,7 +1561,7 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
 </div>
 
 <!-- IN CHARGE MODAL -->
-<div class="overlay" id="inchargeModal" style="display:none">
+<div class="overlay" id="inchargeModal" style="display:none;padding-bottom:80px">
   <div class="modal" style="max-width:680px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column">
     <div class="modal-hd">
       <h2>📋 In Charge — บันทึกเวร</h2>
@@ -1612,12 +1729,14 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
   <button class="bn-item" id="bn-ic" onclick="showSec('ic',document.getElementById('nav-ic'));setActiveBN('ic')">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
     <span>IC</span></button>
-  <button class="bn-item" id="bn-monthly" onclick="showSec('monthly',document.getElementById('nav-monthly'));setActiveBN('monthly')">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
-    <span>รายเดือน</span></button>
-  <button class="bn-item" id="bn-yearly" onclick="showSec('yearly',document.getElementById('nav-yearly'));setActiveBN('yearly')">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
-    <span>รายปี</span></button>
+
+
+  <button class="bn-item" id="bn-kpi" onclick="showSec('kpi',document.getElementById('nav-kpi'));setActiveBN('kpi')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
+    <span>KPI</span></button>
+  <button class="bn-item" id="bn-disease" onclick="showSec('disease',document.getElementById('nav-disease'));setActiveBN('disease')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    <span>รายโรค</span></button>
 </nav>
 
 <!-- CONFIRM -->
@@ -1639,9 +1758,9 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
 // ============================================================
 // CONFIG & API
 // ============================================================
-const _DEFAULT_URL='https://script.google.com/macros/s/AKfycbwW1PT5MMVQ2_JBq-vdUnD7b5Ijz6tCDmMpx1BHgse071c_y0ALZqcxMZJwt4uTh1tV0g/exec';
-let API_URL = localStorage.getItem('icu_api_url')||_DEFAULT_URL;
-if(!localStorage.getItem('icu_api_url')) localStorage.setItem('icu_api_url',_DEFAULT_URL);
+const _DEFAULT_URL='https://script.google.com/macros/s/AKfycbx0ksnwhROMwGqex1IO8r-A6HoCqcz9ESF0S70wczeWGv8LE5YEekXNVlMsFMU9T2MWqQ/exec';
+let API_URL = _DEFAULT_URL;
+localStorage.setItem('icu_api_url',_DEFAULT_URL);
 
 function saveApiUrl(){
   const url=document.getElementById('apiUrlInput').value.trim();
@@ -1706,6 +1825,16 @@ function showConfig(){document.getElementById('configPage').style.display='flex'
 function showLogin(){document.getElementById('configPage').style.display='none';document.getElementById('loginPage').style.display='flex';document.getElementById('registerPage').style.display='none';document.getElementById('changePwdPage').style.display='none';document.getElementById('appPage').style.display='none';document.querySelector('.bottom-nav').style.display='none';}
 function showRegister(){document.getElementById('configPage').style.display='none';document.getElementById('loginPage').style.display='none';document.getElementById('registerPage').style.display='flex';document.getElementById('changePwdPage').style.display='none';document.getElementById('appPage').style.display='none';document.getElementById('regErr').style.display='none';document.querySelector('.bottom-nav').style.display='none';}
 
+function flattenData(data){
+  // แปลง data object เป็น flat params สำหรับส่งผ่าน GET
+  const flat={};
+  if(!data) return flat;
+  Object.entries(data).forEach(([k,v])=>{
+    flat['d_'+encodeURIComponent(k)]=typeof v==='object'?JSON.stringify(v):String(v==null?'':v);
+  });
+  return flat;
+}
+
 async function api(action,params={},body=null){
   if(!API_URL) throw new Error('ยังไม่ได้ตั้งค่า API URL');
   const q=new URLSearchParams({action,...params}).toString();
@@ -1724,7 +1853,7 @@ function hideLoad(){document.getElementById('loadOverlay').classList.remove('ope
 // ============================================================
 const MONTHS_TH=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const WARD_OPTS=['ER','อายุรกรรมชาย','อายุรกรรมหญิง','ศัลยกรรมชาย','ศัลยกรรมหญิง','นรีเวชกรรม','OR','Semi-ICU'];
-const DC_WARD=['อายุรกรรมชาย','อายุรกรรมหญิง','ศัลยกรรมชาย','ศัลยกรรมหญิง','Semi-ICU','รพ.หาดใหญ่','กลับบ้าน','รพ.มอ','รพ.ตรัง','รพ.สงขลา','รพ.ละงู','รพ.ควนโดน','รพ.ท่าแพ','รพ.มะนัง','รพ.ควนกาหลง','รพ.ทุ้งหว้า'];
+const DC_WARD=['ไม่มี','อายุรกรรมชาย','อายุรกรรมหญิง','ศัลยกรรมชาย','ศัลยกรรมหญิง','Semi-ICU','รพ.หาดใหญ่','กลับบ้าน','รพ.มอ','รพ.ตรัง','รพ.สงขลา','รพ.ละงู','รพ.ควนโดน','รพ.ท่าแพ','รพ.มะนัง','รพ.ควนกาหลง','รพ.ทุ้งหว้า'];
 const DC_REASON=['Dead','Refer','ย้ายทุเลา','ย้ายต้องการเตียง','ไม่สมัครใจอยู่','palliative','ค้างเดือน'];
 
 // ── Normalize ประเภทผู้ป่วย (ไม่ยึดตัวสะกด) ─────────────────
@@ -1773,8 +1902,8 @@ function dcMatch(val, type){
   return false;
 }
 const TOTAL_BEDS=14;
-const OPTS_LABELS={beds:'🛏️ เตียง ICU',doctors:'👨‍⚕️ แพทย์เจ้าของไข้',ventilatorMode:'🌬️ การหายใจ',ventilator:'🫁 ชนิด Ventilator',rights:'💳 สิทธิ์การรักษา',patientType:'🏷️ ประเภทผู้ป่วย',drugAllergy:'💊 แพ้ยา',surgeryType:'🔪 ชนิดการผ่าตัด',diagnosis:'🔬 Diagnosis (Dx)',recorderAdmit:'📝 ผู้บันทึก Admit',recorderDC:'📝 ผู้บันทึก D/C',incharge:'👩‍⚕️ รายชื่อ In Charge',udOptions:'📋 U/D (โรคประจำตัว)',specimenType:'🧪 ชนิดสิ่งส่งตรวจ',pathogenType:'🦠 ชนิดของเชื้อที่พบ',haOptions:'💊 ยา High Alert Drug'};
-const MODAL_TABS=[{id:'tab-admit',label:'📋 ข้อมูลรับ'},{id:'tab-ic',label:'🫁 IC / Ventilator'},{id:'tab-assess',label:'📊 การประเมิน'},{id:'tab-infection',label:'🦠 การติดเชื้อ'},{id:'tab-dc',label:'🚪 ข้อมูล D/C'},{id:'tab-extra',label:'📎 ข้อมูลเพิ่มเติม'}];
+const OPTS_LABELS={causeOfDeath:'💀 สาเหตุการเสียชีวิต',referReason:'🚑 เหตุผลที่ต้อง Refer',beds:'🛏️ เตียง ICU',doctors:'👨‍⚕️ แพทย์เจ้าของไข้',ventilatorMode:'🌬️ การหายใจ',ventilator:'🫁 ชนิด Ventilator',rights:'💳 สิทธิ์การรักษา',patientType:'🏷️ ประเภทผู้ป่วย',drugAllergy:'💊 แพ้ยา',surgeryType:'🔪 ชนิดการผ่าตัด',diagnosis:'🔬 Diagnosis (Dx)',recorderAdmit:'📝 ผู้บันทึก Admit',recorderDC:'📝 ผู้บันทึก D/C',incharge:'👩‍⚕️ รายชื่อ In Charge',udOptions:'📋 U/D (โรคประจำตัว)',specimenType:'🧪 ชนิดสิ่งส่งตรวจ',pathogenType:'🦠 ชนิดของเชื้อที่พบ',haOptions:'💊 ยา High Alert Drug'};
+const MODAL_TABS=[{id:'tab-admit',label:'📋 ข้อมูลรับ'},{id:'tab-ic',label:'🫁 IC / Ventilator'},{id:'tab-assess',label:'📊 การประเมิน'},{id:'tab-infection',label:'🦠 การติดเชื้อ'},{id:'tab-dc',label:'🚪 ข้อมูล D/C'}];
 
 let currentUser=null,_opts={},_pts=[],_filtPts=[],_curPg=1;
 
@@ -1827,13 +1956,18 @@ function setDashMode(mode){
 function setupYears(){
   const now=new Date(),cy=now.getFullYear(),cm=now.getMonth()+1;
   const fy=cm>=10?cy+1:cy;
-  ['fYear','dYear','icYear','mYear','dYearOnly'].forEach(id=>{
+  ['fYear','dYear','icYear','mYear','dYearOnly','kpiYear','diseaseYear'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     for(let y=cy-3;y<=cy+1;y++){const o=document.createElement('option');o.value=y;o.textContent=y;if(y===cy)o.selected=true;el.appendChild(o);}
   });
+  // Fiscal year dropdowns (ปีงบ)
+  ['kpiFiscalYear','diseaseFiscalYear','statFiscalYear'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    for(let y=cy-3;y<=cy+1;y++){const o=document.createElement('option');o.value=y;o.textContent=`ปีงบ ${y+543} (ต.ค.${y+542}-ก.ย.${y+543})`;if(y===cy)o.selected=true;el.appendChild(o);}
+  });
   const yEl=document.getElementById('yYear');
   if(yEl){for(let f=fy-3;f<=fy+1;f++){const o=document.createElement('option');o.value=f;o.textContent='ปีงบ '+f+' (ต.ค.'+(f-1)+'-ก.ย.'+f+')';if(f===fy)o.selected=true;yEl.appendChild(o);}}
-  ['dMonth','icMonth','mMonth'].forEach(id=>{
+  ['dMonth','icMonth','kpiMonth','diseaseMonth','mMonth'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     MONTHS_TH.forEach((m,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=m;if(i+1===cm)o.selected=true;el.appendChild(o);});
   });
@@ -1842,7 +1976,7 @@ function setupYears(){
 }
 
 async function loadOpts(){try{_opts=await api('getOpts');}catch(e){_opts=defaultOpts();}}
-function defaultOpts(){return{ward:['อายุรกรรม','ศัลยกรรม','กุมารเวช','สูตินรีเวช','ห้องผ่าตัด','ER','อื่นๆ'],beds:['ICU1','ICU2','ICU3','ICU4','ICU5','ICU6','ICU7','ICU8','ICU9','ICU10','ICU11','ICU12','ICU13','ICU14'],doctors:['พญ.ชัญญา มุกดารัศมี','พญ.วรรณกานต์ พัฒนโกวิท','พญ.ธมน เนียมรัตน์','พญ.จักรปาณี ตั้งสินมั่นคง','นพ.พิทวัส จินดาอิสรชัยกุล','พญ.กชมน ภู่เจริญ','นพ.ภาณุศักดิ์ หล่อตระกูลกูล','พญ.ชุตินันท์ สุปราณี','พญ.กัญญารัตน์ เลิศวาจาจา','นพ.จักรพงษ์ เทศพิทักษ์','นพ.สรวิชญ์ พุฒินาถ','นพ.วรสิทธิ์ ชัยมงคลานนท์','นพ.ภาณุพงศ์ นาคช่วย','นพ.นพเกียรติ อัครนพหงส์','นพ.เนติกรณ์ ผิวทอง','พญ.มนวดี ไชยกุล','พญ.นพวรรณ ฐิติวรการ','นพ.ภาวัฒน์ ไล่เจริญ','นพ.กรณ์ธรรม อู่ไพบูลย์สิน','นพ.กุลวิทย์ อโนทัยสถาพร','นพ.พงศกร กาญจนา','พญ.นริศรา สัณห์พานิชกิจ','นพ.วุฒิพงศ์ วิไลวรางกุล','นพ.ไพบูลย์ แสงยืยยงพิพัฒน์','พญ.ศศิพิมพ์ วรรณรัตน์','นพ.พุทธพงษ์ โฆษิตศุภกุล','พญ.วนพัชร์ ยิ้มซ้าย','นพ.มนัสนันท์ กนกทิพย์นารา','พญ.ณัฐสุดา พันธ์บุญมี','นพ.นัฐพงศ์ เด็นมะเส','พญ.นุสรา ยุทธสมภพ'],ventilatorMode:['Ventilator','HFNC','Canular','Room air','Bipap','T-piece'],ventilator:['840/2','840/3','840/4','840/5','840/6','840/7','840/8','840/9','840/10','840/11','840/12','840/13','840/14','840/15','840/22','Nihon/1','Nihon/2','Bella/1','Bella/2','Vela','Hamilton','HFNC','Canular'],rights:['กำนันผู้ใหญ่บ้านนอกเขต','UC นอกเขต','ประกันสังคม','จ่ายตรง','พ.ร.บ.ฉุกเฉิน','ผู้สูงอายุนอกเขต','ผู้สูงอายุในเขต','ผู้พิการนอกเขต','ผู้พิการในเขต','พรบ.ผู้ประสบภัยจากรถ','UC ต่างจังหวัด','บุคคลในครอบครัว อสม ในเขต','บุคคลในครอบครัว อสม นอกเขต','ชำระเงิน','ผู้มีรายได้น้อยในเขต','ต่างด้าว','สวัสดิการข้าราชการส่วนท้องถิ่น','ผู้มีรายได้น้อยนอกเขต','ภิกษุ นอกเขต','ใช้สิทธิเบิกหน่วยงานต้นสังกัด','บัตรสุขภาพ ผสส.อสม.ในเขต','ประกันสังคมโรงพยาบาลสตูล','ทหารผ่านศึก'],haOptions:['Adrenaline','Adenosine','Dopamine','Dobutamine','NorE (Norepinephrine)','Amiodarone','Chloral hydrate syrup','Digoxin','Esmolol','Magnesium sulfate','Midazolam','Fentanyl','Morphine','Pethidine','Phenytoin inj (Dilantin)','KCL/K2HPO4','Warfarin tab','Alteplase inj','SK inj (Streptokinase)','Nicardipine','Nitroglycerine','Regular insulin','NPH insulin','Insulin glargine','3% NaCl inj.','10% MgSO4 inj.','Clozapine tablet'],patientType:['MED','SURG','Neuro Surg.','Ortho','OB','Gyne','PEDS','Maxillo','ENT','Plastic','Trauma','ER'],drugAllergy:['ไม่มี','Penicillin','Sulfa','NSAIDs','Contrast'],surgeryType:['ไม่ได้ผ่าตัด','Craniotomy','Craniectomy','VP Shunt','EVD Insertion','Laparotomy','Appendectomy','Cholecystectomy','Hernia repair','Fracture fixation','Amputation','Tracheostomy','CABG','Valve replacement','Hysterectomy','C-Section','Splenectomy','Bowel resection','Debridement','Wound closure'],diagnosis:['Sepsis','Septic shock','Pneumonia','ARDS','CHF','CVA','DKA','CKD','Trauma','Post-op','Respiratory failure','Stroke','ICH','TBI','SAH','SDH','Meningitis','Encephalitis','Seizure','NSTEMI','STEMI','AF','PE','DVT','UGIB','LGIB','Pancreatitis','Cirrhosis','AKI','Peritonitis','Burn','Polytrauma','Eclampsia','PPH','Ectopic pregnancy','Hypertensive emergency','Thyroid storm','Hypoglycemia','Rhabdomyolysis','Cardiac arrest','Cardiogenic shock','Hypovolemic shock','Hemorrhagic shock','Anaphylaxis','Obstructive shock','Drowning','Snake bite','Drug overdose','Hanging'],recorderAdmit:['พว.รัศมี','พว.สุมณฑา','พว.ฮาบีด๊ะ','พว.เพ็ญทิพย์','พว.อุไรรัตน์','พว.อุรุณโรจน์','พว.ฟาดีละฮ์','พว.รอหนา','พว.สิริลักษณ์','พว.รูวัยดา','พว.สุรัสวดี','พว.อารียา','พว.ราโมนา','พว.อารีนา','พว.ฮูดีญา','พว.นติยา','พว.กิ่งกาญจน์','พว.นาดียา','พว.มุซิรา','พว.พิมพ์มาดา','พว.จันทร์จิรา','พว.จิราลักษณ์','พว.สุรัยยา','พว.นุสรีน','พว.ตัซนีม'],
+function defaultOpts(){return{causeOfDeath:['Septic shock','Respiratory failure','Cardiac arrest','MODS','Hemorrhagic shock','Neurological death','อื่นๆ'],referReason:['ขาดแคลนอุปกรณ์','ต้องการผู้เชี่ยวชาญเฉพาะทาง','ผู้ป่วยขอย้าย','ขาดเตียง ICU','อื่นๆ'],ward:['อายุรกรรม','ศัลยกรรม','กุมารเวช','สูตินรีเวช','ห้องผ่าตัด','ER','อื่นๆ'],beds:['ICU1','ICU2','ICU3','ICU4','ICU5','ICU6','ICU7','ICU8','ICU9','ICU10','ICU11','ICU12','ICU13','ICU14'],doctors:['พญ.ชัญญา มุกดารัศมี','พญ.วรรณกานต์ พัฒนโกวิท','พญ.ธมน เนียมรัตน์','พญ.จักรปาณี ตั้งสินมั่นคง','นพ.พิทวัส จินดาอิสรชัยกุล','พญ.กชมน ภู่เจริญ','นพ.ภาณุศักดิ์ หล่อตระกูลกูล','พญ.ชุตินันท์ สุปราณี','พญ.กัญญารัตน์ เลิศวาจาจา','นพ.จักรพงษ์ เทศพิทักษ์','นพ.สรวิชญ์ พุฒินาถ','นพ.วรสิทธิ์ ชัยมงคลานนท์','นพ.ภาณุพงศ์ นาคช่วย','นพ.นพเกียรติ อัครนพหงส์','นพ.เนติกรณ์ ผิวทอง','พญ.มนวดี ไชยกุล','พญ.นพวรรณ ฐิติวรการ','นพ.ภาวัฒน์ ไล่เจริญ','นพ.กรณ์ธรรม อู่ไพบูลย์สิน','นพ.กุลวิทย์ อโนทัยสถาพร','นพ.พงศกร กาญจนา','พญ.นริศรา สัณห์พานิชกิจ','นพ.วุฒิพงศ์ วิไลวรางกุล','นพ.ไพบูลย์ แสงยืยยงพิพัฒน์','พญ.ศศิพิมพ์ วรรณรัตน์','นพ.พุทธพงษ์ โฆษิตศุภกุล','พญ.วนพัชร์ ยิ้มซ้าย','นพ.มนัสนันท์ กนกทิพย์นารา','พญ.ณัฐสุดา พันธ์บุญมี','นพ.นัฐพงศ์ เด็นมะเส','พญ.นุสรา ยุทธสมภพ'],ventilatorMode:['Ventilator','HFNC','Canular','Room air','Bipap','T-piece'],ventilator:['840/2','840/3','840/4','840/5','840/6','840/7','840/8','840/9','840/10','840/11','840/12','840/13','840/14','840/15','840/22','Nihon/1','Nihon/2','Bella/1','Bella/2','Vela','Hamilton','HFNC','Canular'],rights:['กำนันผู้ใหญ่บ้านนอกเขต','UC นอกเขต','ประกันสังคม','จ่ายตรง','พ.ร.บ.ฉุกเฉิน','ผู้สูงอายุนอกเขต','ผู้สูงอายุในเขต','ผู้พิการนอกเขต','ผู้พิการในเขต','พรบ.ผู้ประสบภัยจากรถ','UC ต่างจังหวัด','บุคคลในครอบครัว อสม ในเขต','บุคคลในครอบครัว อสม นอกเขต','ชำระเงิน','ผู้มีรายได้น้อยในเขต','ต่างด้าว','สวัสดิการข้าราชการส่วนท้องถิ่น','ผู้มีรายได้น้อยนอกเขต','ภิกษุ นอกเขต','ใช้สิทธิเบิกหน่วยงานต้นสังกัด','บัตรสุขภาพ ผสส.อสม.ในเขต','ประกันสังคมโรงพยาบาลสตูล','ทหารผ่านศึก'],haOptions:['Adrenaline','Adenosine','Dopamine','Dobutamine','NorE (Norepinephrine)','Amiodarone','Chloral hydrate syrup','Digoxin','Esmolol','Magnesium sulfate','Midazolam','Fentanyl','Morphine','Pethidine','Phenytoin inj (Dilantin)','KCL/K2HPO4','Warfarin tab','Alteplase inj','SK inj (Streptokinase)','Nicardipine','Nitroglycerine','Regular insulin','NPH insulin','Insulin glargine','3% NaCl inj.','10% MgSO4 inj.','Clozapine tablet'],patientType:['MED','SURG','Neuro Surg.','Ortho','OB','Gyne','PEDS','Maxillo','ENT','Plastic','Trauma','ER'],drugAllergy:['ไม่มี','Penicillin','Sulfa','NSAIDs','Contrast'],surgeryType:['ไม่ได้ผ่าตัด','Craniotomy','Craniectomy','VP Shunt','EVD Insertion','Laparotomy','Appendectomy','Cholecystectomy','Hernia repair','Fracture fixation','Amputation','Tracheostomy','CABG','Valve replacement','Hysterectomy','C-Section','Splenectomy','Bowel resection','Debridement','Wound closure'],diagnosis:['Sepsis','Septic shock','Pneumonia','ARDS','CHF','CVA','DKA','CKD','Trauma','Post-op','Respiratory failure','Stroke','ICH','TBI','SAH','SDH','Meningitis','Encephalitis','Seizure','NSTEMI','STEMI','AF','PE','DVT','UGIB','LGIB','Pancreatitis','Cirrhosis','AKI','Peritonitis','Burn','Polytrauma','Eclampsia','PPH','Ectopic pregnancy','Hypertensive emergency','Thyroid storm','Hypoglycemia','Rhabdomyolysis','Cardiac arrest','Cardiogenic shock','Hypovolemic shock','Hemorrhagic shock','Anaphylaxis','Obstructive shock','Drowning','Snake bite','Drug overdose','Hanging'],recorderAdmit:['พว.รัศมี','พว.สุมณฑา','พว.ฮาบีด๊ะ','พว.เพ็ญทิพย์','พว.อุไรรัตน์','พว.อุรุณโรจน์','พว.ฟาดีละฮ์','พว.รอหนา','พว.สิริลักษณ์','พว.รูวัยดา','พว.สุรัสวดี','พว.อารียา','พว.ราโมนา','พว.อารีนา','พว.ฮูดีญา','พว.นติยา','พว.กิ่งกาญจน์','พว.นาดียา','พว.มุซิรา','พว.พิมพ์มาดา','พว.จันทร์จิรา','พว.จิราลักษณ์','พว.สุรัยยา','พว.นุสรีน','พว.ตัซนีม'],
 incharge:['พว.รัศมี','พว.สุมณฑา','พว.ฮาบีด๊ะ','พว.เพ็ญทิพย์','พว.อุไรรัตน์','พว.อุรุณโรจน์','พว.ฟาดีละฮ์','พว.รอหนา','พว.สิริลักษณ์','พว.รูวัยดา','พว.สุรัสวดี','พว.อารียา','พว.ราโมนา','พว.อารีนา','พว.ฮูดีญา','พว.นติยา','พว.กิ่งกาญจน์','พว.นาดียา','พว.มุซิรา','พว.พิมพ์มาดา','พว.จันทร์จิรา','พว.จิราลักษณ์','พว.สุรัยยา','พว.นุสรีน','พว.ตัซนีม'],recorderDC:['พว.รัศมี','พว.สุมณฑา','พว.ฮาบีด๊ะ','พว.เพ็ญทิพย์','พว.อุไรรัตน์','พว.อุรุณโรจน์','พว.ฟาดีละฮ์','พว.รอหนา','พว.สิริลักษณ์','พว.รูวัยดา','พว.สุรัสวดี','พว.อารียา','พว.ราโมนา','พว.อารีนา','พว.ฮูดีญา','พว.นติยา','พว.กิ่งกาญจน์','พว.นาดียา','พว.มุซิรา','พว.พิมพ์มาดา','พว.จันทร์จิรา','พว.จิราลักษณ์','พว.สุรัยยา','พว.นุสรีน','พว.ตัซนีม'],udOptions:['ไม่มี','ปฏิเสธ','HT','IHD','MI','CHF','VHD','AF','VT','SVT','CAD','DLP','CVA','TIA','Stroke','NSTEMI','STEMI','LBBB','MR','MS','DCM','TVD','Old MI','VSD','HFpEF','HFrEF','ICM','Asthma','COPD','Pulmonary tuberculosis','OSA','old TB','Pulmonary fibrosis','DM','Hypothyroid','Hyperthyroid','CKD','ESRD','Obesity','Gout','ภูมิแพ้','Urolithiasis','BPH','Cirrhosis','Chronic Hep B','Chronic Hep C','HCV','PUD','Cholelithiasis','HCC','GERD','Epilepsy','Parkinson','MG','Dementia','Alzheimer','CVST','Anemia','Leukemia','Thrombocytopenia','Lymphoma','HIV','AIDS','SLE','RA','Autoimmune','Pancytopenia','Thalassemia','OA','Rheumatoid arthritis','Osteoporosis','Degenerative spine','MDD','Anxiety','Bipolar','Schizophrenia','Old CVA','Trauma','CA thyroid','ESRD on CAPD','ESRD on AVF','CA cecum','CA lung','CA Breast','CA colon','CA cervix','CA Floor of mouth','CA Sigmoid','CA esophagus','CA Prostate','CA Liver','brain tumor','ITP','AVM','Glaucoma','TB lung','AAA','APS','CBD Stone','Nephrotic syndrome','Thyroid mass'],specimenType:['Sputum Culture','Pus Culture','Hemoculture ขวด 1','Hemoculture ขวด 2','Hemoculture x 2','Pleural fluid Culture','Urine Culture','Stool Culture','BAL Culture','CSF Culture','Wound Culture','Tracheal aspirate Culture'],pathogenType:['A.baum CRAB_PXDR','A.baum CRE_PXDR','A.baum MDR','E.Coli MDR','K.P. CRE_PXDR','K.P. CRAB_PXDR','K.P. MDR','Pseudomonas a. CRAB_PXDR','Pseudomonas a. CRE_PXDR','Pseudomonas a. MDR','Proteus species CRE_PXDR','MRSA','MSSA','VRE','Candida species','Klebsiella pneumoniae','Escherichia coli','Staphylococcus aureus','Streptococcus pneumoniae']};}
 function o(k){return(_opts[k]||defaultOpts()[k]||[]);}
 
@@ -1954,7 +2088,9 @@ function showApp(user){
     });
   }
   showEditButtonIfAdmin();
-  // apply hidden menus จาก checkbox
+  // แสดงปุ่ม RN เฉพาะ nurse
+  const rnBtn=document.getElementById('rnBtn');
+  if(rnBtn) rnBtn.style.display=(user.role==='nurse'||user.role==='admin')?'':'none';
   if(user.hiddenMenus){
     const hidden=typeof user.hiddenMenus==='string'?JSON.parse(user.hiddenMenus||'[]'):user.hiddenMenus||[];
     hidden.forEach(id=>{
@@ -1985,7 +2121,7 @@ function showApp(user){
     perms.forEach(p=>{
       if(p==='no_patients') document.getElementById('nav-patients').style.display='none';
       if(p==='no_ic') document.getElementById('nav-ic').style.display='none';
-      if(p==='no_monthly') document.getElementById('nav-monthly').style.display='none';
+      if(p==='no_monthly'){const el=document.getElementById('nav-kpi');if(el)el.style.display='none';}
       if(p==='no_yearly') document.getElementById('nav-yearly').style.display='none';
       if(p==='no_dashboard') document.getElementById('nav-dashboard').style.display='none';
       if(p==='no_bedmap') document.getElementById('nav-bedmap').style.display='none';
@@ -2198,7 +2334,8 @@ function showSec(name,el){
   if(name==='dashboard') loadDash();
   if(name==='bedmap') loadBedMap();
   if(name==='ic') loadIC();
-  if(name==='monthly') loadMonthly();
+  if(name==='disease') loadDiseaseIndicator();
+  if(name==='kpi'){loadKPI();loadMonthly();}
   if(name==='yearly') loadYearly();
   if(name==='users') renderUsers();
   if(name==='opts'){ renderOpts(); loadMarqueeFromServer(); loadNewsBoardSettings(); loadInChargeSettings();
@@ -2367,6 +2504,9 @@ async function doIcLogin(){
     const m=parseInt(document.getElementById('fMonth')?.value||new Date().getMonth()+1);
     const y=parseInt(document.getElementById('fYear')?.value||new Date().getFullYear());
     _icAdmittedPts=[];
+    // ล้าง cache เพื่อโหลดข้อมูลใหม่พร้อม id
+    const cacheKey=`${y}-${m}`;
+    if(_dashCache[cacheKey]) delete _dashCache[cacheKey];
     try{_icAdmittedPts=await fetchMonthPts(m,y);}catch(e){toast(e.message,true);}
     _icAdmittedPts=_icAdmittedPts.filter(p=>p['สถานะ']==='กำลัง admit');
 
@@ -2403,6 +2543,13 @@ async function doIcLogin(){
         fc_stop:    pt['F/C (END)']?di(pt['F/C (END)']):'' ,
         icd_start:  pt['ICD (Start)']?di(pt['ICD (Start)']):'' ,
         icd_stop:   pt['ICD (End)']?di(pt['ICD (End)']):'' ,
+        piEvents:   tryParseJSON(pt['Pressure Injury'])||[],
+        ueEvents:   tryParseJSON(pt['Unplanned Extubation'])||[],
+        meEvents:   tryParseJSON(pt['Medication Error'])||[],
+        icdscLatest: pt['ICDSC Score']||'',
+        icdscDate:  pt['ICDSC Date']||'',
+        icdscMax:   pt['ICDSC Max']||'',
+        icdscMaxDate: pt['ICDSC Max Date']||'',
       };
     });
     renderIcBedList();
@@ -2479,13 +2626,10 @@ function renderIcBedList(){
         ${dept?`<span style="font-size:10px;background:#e8f5e9;color:#2e7d32;padding:1px 6px;border-radius:4px">${dept}</span>`:''}
       </div>
       <div class="ic-bed-grid">
+        <!-- In Charge section -->
         <div class="fg" style="grid-column:1/-1">
           <label style="font-size:10px">Dx (อัปเดต)</label>
           <input type="text" value="${esc(dx)}" placeholder="Diagnosis..." oninput="icSet('${bedId}','dx',this.value)" style="width:100%">
-        </div>
-        <div class="fg">
-          <label style="font-size:10px">SOS Score</label>
-          <input type="number" min="0" max="16" value="${esc(sos)}" placeholder="0-16" oninput="icSet('${bedId}','sos',this.value)" style="width:100%">
         </div>
         <div class="fg">
           <label style="font-size:10px">ประเภทผู้ป่วย ICU</label>
@@ -2497,6 +2641,11 @@ function renderIcBedList(){
             <option value="${esc(doc)}" selected>${doc||'-- เลือก --'}</option>
             ${(_opts['doctors']||[]).filter(d=>d!==doc).map(d=>`<option value="${esc(d)}">${d}</option>`).join('')}
           </select>
+        </div>
+        <!-- SOS read-only (RN กรอก) -->
+        <div class="fg">
+          <label style="font-size:10px;color:#6b7280">SOS Score <span style="font-size:9px">(RN)</span></label>
+          <div style="padding:6px 10px;background:#f9fafb;border:1px solid var(--g200);border-radius:8px;font-weight:700;font-size:13px">${sos||'-'}</div>
         </div>
         <div class="fg" style="grid-column:1/-1">
           <label style="font-size:10px">💊 ยา HD (เลือกได้หลายตัว)</label>
@@ -2517,17 +2666,824 @@ function renderIcBedList(){
           </div>
         </div>
         <div class="fg" style="grid-column:1/-1">
-          <label style="font-size:10px">🩺 IC (เริ่ม / หยุด)</label>
-          <div style="background:#f9fafb;border-radius:6px;padding:8px;border:1px solid var(--g100)">${icRows}</div>
+          <label style="font-size:10px;color:#6b7280">🩺 IC Devices <span style="font-size:9px">(RN)</span></label>
+          <div style="background:#f9fafb;border-radius:6px;padding:8px;border:1px solid var(--g100)">
+            ${icItems.map(ic=>{
+              const started=bd[ic.key+'_start']!==undefined?bd[ic.key+'_start']:(pt[ic.startF]?di(pt[ic.startF]):'');
+              const stopped=bd[ic.key+'_stop']!==undefined?bd[ic.key+'_stop']:(pt[ic.endF]?di(pt[ic.endF]):'');
+              if(!started) return '';
+              return `<div style="display:flex;gap:8px;font-size:10px;padding:3px 0;border-bottom:1px solid var(--g100)">
+                <span style="font-weight:600;width:80px">${ic.label}</span>
+                <span>เริ่ม: ${started||'-'}</span>
+                <span>หยุด: ${stopped||'-'}</span>
+              </div>`;
+            }).join('')||'<span style="font-size:10px;color:#9ca3af">ยังไม่มีข้อมูล</span>'}
+          </div>
         </div>
         <div class="fg" style="grid-column:1/-1">
           <label style="font-size:10px">หมายเหตุ</label>
           <input type="text" value="${esc(note)}" placeholder="หมายเหตุ..." oninput="icSet('${bedId}','note',this.value)" style="width:100%">
         </div>
+        <div class="fg" style="grid-column:1/-1">
+          <label style="font-size:10px;font-weight:700;color:#c62828">🛡️ Patient Safety</label>
+          
+          <!-- Pressure Injury -->
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:10px;font-weight:600">🩹 Pressure Injury</span>
+              <button type="button" onclick="icAddEvent('${bedId}','pi')" class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 8px">+ เพิ่ม</button>
+            </div>
+            <div id="pi_list_${bedId}">${renderIcEvents(bd.piEvents||[],'pi','${bedId}')}</div>
+          </div>
+
+          <!-- Unplanned Extubation -->
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:10px;font-weight:600">😮 Unplanned Extubation</span>
+              <button type="button" onclick="icAddEvent('${bedId}','ue')" class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 8px">+ เพิ่ม</button>
+            </div>
+            <div id="ue_list_${bedId}">${renderIcEvents(bd.ueEvents||[],'ue','${bedId}')}</div>
+          </div>
+
+          <!-- Medication Error -->
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:10px;font-weight:600">💊 Medication Error</span>
+              <button type="button" onclick="icAddEvent('${bedId}','me')" class="btn btn-outline btn-sm" style="font-size:10px;padding:2px 8px">+ เพิ่ม</button>
+            </div>
+            <div id="me_list_${bedId}">${renderIcEvents(bd.meEvents||[],'me','${bedId}')}</div>
+          </div>
+
+          <!-- ICDSC read-only (RN กรอก) -->
+          <div>
+            <label style="font-size:10px;color:#6b7280">🧠 ICDSC Score <span style="font-size:9px">(RN)</span></label>
+            <div style="display:flex;gap:8px;font-size:11px;background:#f9fafb;padding:6px 8px;border-radius:6px;border:1px solid var(--g200)">
+              <span>ล่าสุด: <b>${bd.icdscLatest||'-'}</b> (${bd.icdscDate||'-'})</span>
+              <span>สูงสุด: <b>${bd.icdscMax||'-'}</b> (${bd.icdscMaxDate||'-'})</span>
+              ${parseInt(bd.icdscLatest||0)>=4?'<span style="color:#c62828;font-weight:700">⚠️ Delirium</span>':''}
+            </div>
+          </div>
+              </div>
+            </div>
+            ${parseInt(bd.icdscLatest||0)>=4?'<span style="font-size:9px;color:#c62828;font-weight:700">⚠️ Delirium</span>':''}
+          </div>
+        </div>
       </div>
     </div>`;
   }).join('');
 }
+
+function renderIcEvents(events,type,bedId){
+  if(!events||!events.length) return '<div style="font-size:10px;color:#9ca3af">ยังไม่มีข้อมูล</div>';
+  return events.map((ev,i)=>`
+    <div style="display:flex;align-items:center;gap:4px;background:#f9fafb;border-radius:6px;padding:4px 6px;margin-bottom:2px;font-size:10px">
+      ${type==='pi'?`<span>📅 ${ev.date}</span><span style="background:#fee2e2;color:#c62828;padding:1px 6px;border-radius:4px">${ev.grade||''}</span>`:''}
+      ${type==='ue'?`<span>ครั้งที่ ${ev.count||i+1}</span><span>📅 ${ev.date}</span>`:''}
+      ${type==='me'?`<span>📅 ${ev.date}</span><span style="background:#fff3e0;color:#e65100;padding:1px 6px;border-radius:4px">${ev.type||''}</span>${ev.detail?`<span style="color:#6b7280">${ev.detail}</span>`:''}`:'' }
+      <button type="button" onclick="icRemoveEvent('${bedId}','${type}',${i})" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#c62828;font-size:12px">×</button>
+    </div>`).join('');
+}
+
+function renderIcdscHistory(history){
+  const entries=Object.entries(history).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,7);
+  if(!entries.length) return '<div style="font-size:10px;color:#9ca3af">ยังไม่มีประวัติ</div>';
+  return `<div style="display:flex;flex-wrap:wrap;gap:4px">${entries.map(([d,s])=>`
+    <div style="font-size:9px;background:${parseInt(s)>=4?'#fee2e2':'#f3f4f6'};color:${parseInt(s)>=4?'#c62828':'#374151'};padding:2px 6px;border-radius:4px">
+      ${d.slice(5)}: <b>${s}</b>
+    </div>`).join('')}</div>`;
+}
+
+function showInlineSelect(label, options){
+  return new Promise(resolve=>{
+    const old=document.getElementById('inlinePromptBox');
+    if(old) old.remove();
+    const box=document.createElement('div');
+    box.id='inlinePromptBox';
+    box.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border-radius:12px;padding:20px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.25);width:min(320px,90vw)';
+    box.innerHTML=`
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#1b5e20">${label}</div>
+      <select id="inlineSelectEl" style="width:100%;padding:8px 12px;border:1.5px solid #a5d6a7;border-radius:8px;font-size:14px">
+        ${options.map(o=>`<option value="${o}">${o}</option>`).join('')}
+      </select>
+      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+        <button onclick="document.getElementById('inlinePromptBox').remove();window._inlinePromptResolve('')" style="padding:6px 16px;border-radius:8px;border:1.5px solid #ccc;background:white;cursor:pointer;font-size:13px">ยกเลิก</button>
+        <button onclick="const v=document.getElementById('inlineSelectEl').value;document.getElementById('inlinePromptBox').remove();window._inlinePromptResolve(v)" style="padding:6px 16px;border-radius:8px;border:none;background:#2e7d32;color:white;cursor:pointer;font-size:13px;font-weight:700">ตกลง</button>
+      </div>`;
+    window._inlinePromptResolve=resolve;
+    document.body.appendChild(box);
+  });
+}
+
+function showInlineDatePicker(label){
+  return new Promise(resolve=>{
+    const old=document.getElementById('inlinePromptBox');
+    if(old) old.remove();
+    const today=new Date().toISOString().split('T')[0];
+    const box=document.createElement('div');
+    box.id='inlinePromptBox';
+    box.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border-radius:12px;padding:20px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.25);width:min(320px,90vw)';
+    box.innerHTML=`
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#1b5e20">${label}</div>
+      <input type="date" id="inlineDateEl" value="${today}" style="width:100%;padding:8px 12px;border:1.5px solid #a5d6a7;border-radius:8px;font-size:14px">
+      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+        <button onclick="document.getElementById('inlinePromptBox').remove();window._inlinePromptResolve('')" style="padding:6px 16px;border-radius:8px;border:1.5px solid #ccc;background:white;cursor:pointer;font-size:13px">ยกเลิก</button>
+        <button onclick="const v=document.getElementById('inlineDateEl').value;document.getElementById('inlinePromptBox').remove();window._inlinePromptResolve(v)" style="padding:6px 16px;border-radius:8px;border:none;background:#2e7d32;color:white;cursor:pointer;font-size:13px;font-weight:700">ตกลง</button>
+      </div>`;
+    window._inlinePromptResolve=resolve;
+    document.body.appendChild(box);
+    setTimeout(()=>document.getElementById('inlineDateEl')?.focus(),100);
+  });
+}
+
+async function icAddEvent(bedId,type){
+  const today=new Date().toISOString().split('T')[0];
+  if(!_icBedData[bedId]) _icBedData[bedId]={};
+  const bd=_icBedData[bedId];
+  
+  if(type==='pi'){
+    // Pressure Injury — เกรด + วันที่
+    const grade=await showInlineSelect('เลือกเกรด Pressure Injury',['Grade 1','Grade 2','Grade 3','Grade 4','Unstageable','Deep Tissue Injury']);
+    if(!grade) return;
+    const date=await showInlineDatePicker('วันที่พบ Pressure Injury');
+    if(!date) return;
+    if(!bd.piEvents) bd.piEvents=[];
+    bd.piEvents.push({date,grade});
+    const listEl=document.getElementById('pi_list_'+bedId);
+    if(listEl) listEl.innerHTML=renderIcEvents(bd.piEvents,'pi',bedId);
+    
+  } else if(type==='ue'){
+    // Unplanned Extubation — ครั้งที่ + วันที่
+    const date=await showInlineDatePicker('วันที่เกิด Unplanned Extubation');
+    if(!date) return;
+    if(!bd.ueEvents) bd.ueEvents=[];
+    const count=bd.ueEvents.length+1;
+    bd.ueEvents.push({date,count});
+    const listEl=document.getElementById('ue_list_'+bedId);
+    if(listEl) listEl.innerHTML=renderIcEvents(bd.ueEvents,'ue',bedId);
+    
+  } else if(type==='me'){
+    // Medication Error — ประเภท + รายละเอียด + วันที่
+    const meType=await showInlineSelect('ประเภท Medication Error',['Wrong dose','Wrong drug','Wrong time','Wrong patient','Wrong route','อื่นๆ']);
+    if(!meType) return;
+    const detail=await showInlinePrompt('รายละเอียด (เช่น ชื่อยา, ขนาดยา):');
+    const date=await showInlineDatePicker('วันที่เกิด ME');
+    if(!date) return;
+    if(!bd.meEvents) bd.meEvents=[];
+    bd.meEvents.push({date,type:meType,detail:detail||''});
+    const listEl=document.getElementById('me_list_'+bedId);
+    if(listEl) listEl.innerHTML=renderIcEvents(bd.meEvents,'me',bedId);
+  }
+}
+
+function icRemoveEvent(bedId,type,idx){
+  if(!_icBedData[bedId]) return;
+  const bd=_icBedData[bedId];
+  const key=type==='pi'?'piEvents':type==='ue'?'ueEvents':'meEvents';
+  if(bd[key]) bd[key].splice(idx,1);
+  // อัปเดตทั้ง In Charge และ RN list
+  ['pi_list_','ue_list_','me_list_','rn_pi_','rn_ue_','rn_me_'].forEach(prefix=>{
+    if(prefix.includes(type.replace('pi','pi').replace('ue','ue').replace('me','me'))){
+      const el=document.getElementById(prefix+bedId);
+      if(el) el.innerHTML=renderIcEvents(bd[key]||[],type,bedId);
+    }
+  });
+  // อัปเดตทุก element ที่เกี่ยวข้อง
+  [type+'_list_'+bedId, 'rn_'+type+'_'+bedId].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.innerHTML=renderIcEvents(bd[key]||[],type,bedId);
+  });
+}
+
+function icSaveIcdsc(bedId){
+  if(!_icBedData[bedId]) _icBedData[bedId]={};
+  const bd=_icBedData[bedId];
+  const score=bd.icdscToday;
+  if(!score&&score!=='0'){toast('กรุณากรอก ICDSC Score',true);return;}
+  const today=new Date().toISOString().split('T')[0];
+  if(!bd.icdscHistory) bd.icdscHistory={};
+  bd.icdscHistory[today]=score;
+  document.getElementById('icdsc_list_'+bedId).innerHTML=renderIcdscHistory(bd.icdscHistory);
+  toast('✅ บันทึก ICDSC แล้ว');
+}
+
+function icTogglePIDate(bedId,v){const el=document.getElementById('pi_'+bedId);if(el)el.style.display=v==='Yes'?'block':'none';}
+function icToggleUEDate(bedId,v){const el=document.getElementById('ue_'+bedId);if(el)el.style.display=v==='Yes'?'block':'none';}
+function icToggleMEBox(bedId,v){const el=document.getElementById('me_'+bedId);if(el)el.style.display=v==='Yes'?'block':'none';}
+
+// ── RN System ────────────────────────────────────────────
+let _rnUser=null;
+let _rnSelectedBeds=[];
+
+function openRNMode(){
+  _rnUser=currentUser;
+  _rnSelectedBeds=[];
+  document.getElementById('rnWelcomeName').textContent=currentUser?.fullname||currentUser?.username||'';
+  document.getElementById('rnBedList').innerHTML='<div style="color:#9ca3af;font-size:12px">กำลังโหลด...</div>';
+  document.getElementById('rnStartBtn').disabled=true;
+  document.getElementById('rnModal').style.display='flex';
+  // ใช้ _pts ที่โหลดอยู่แล้ว
+  const allPts=(_pts&&_pts.length)?_pts:[];
+  const admitted=allPts.filter(p=>p['สถานะ']==='กำลัง admit');
+  if(admitted.length){
+    _icAdmittedPts=admitted;
+    admitted.forEach(pt=>{
+      const bedId=(pt['เตียง']||'').trim();
+      if(!_icBedData[bedId]||!_icBedData[bedId]._loaded){
+        _icBedData[bedId]={_loaded:true,sos:pt['SOS Score']||'',rass:pt['RASS']||'',
+          news2Score:pt['NEWS2 Score']||'',news2Date:pt['NEWS2 Date']||'',
+          icdscLatest:pt['ICDSC Score']||'',icdscDate:pt['ICDSC Date']||'',
+          icdscMax:pt['ICDSC Max']||'',icdscMaxDate:pt['ICDSC Max Date']||'',
+          piEvents:tryParseJSON(pt['Pressure Injury'])||[],
+          ueEvents:tryParseJSON(pt['Unplanned Extubation'])||[],
+          meEvents:tryParseJSON(pt['Medication Error'])||[],
+          vent_start:pt['Ventilator (Start)']?di(pt['Ventilator (Start)']):'' ,
+          vent_stop:pt['Ventilator (End)']?di(pt['Ventilator (End)']):'' ,
+          aline_start:pt['A-Line (Start)']?di(pt['A-Line (Start)']):'' ,
+          aline_stop:pt['A-Line (End)']?di(pt['A-Line (End)']):'' ,
+          cline_start:pt['C-Line (Start)']?di(pt['C-Line (Start)']):'' ,
+          cline_stop:pt['C-Line (End.)']?di(pt['C-Line (End.)']):'' ,
+          iv_start:pt['IV (Start)']?di(pt['IV (Start)']):'' ,
+          iv_stop:pt['IV (End)']?di(pt['IV (End)']):'' ,
+          fc_start:pt['F/C (Start)']?di(pt['F/C (Start)']):'' ,
+          fc_stop:pt['F/C (END)']?di(pt['F/C (END)']):'' ,
+          icd_start:pt['ICD (Start)']?di(pt['ICD (Start)']):'' ,
+          icd_stop:pt['ICD (End)']?di(pt['ICD (End)']):'' ,
+        };
+      }
+    });
+    renderRNBedList(admitted.map(p=>p['เตียง']).filter(Boolean));
+  } else {
+    const now_=new Date();
+    fetchMonthPts(now_.getMonth()+1,now_.getFullYear()).then(p=>{
+      const adm=p.filter(x=>x['สถานะ']==='กำลัง admit');
+      _icAdmittedPts=adm;
+      renderRNBedList(adm.map(x=>x['เตียง']).filter(Boolean));
+    }).catch(e=>{
+      document.getElementById('rnBedList').innerHTML=`<div style="color:#c62828;font-size:12px">${e.message}</div>`;
+    });
+  }
+}
+
+function renderRNBedList(beds){
+  document.getElementById('rnBedList').innerHTML=beds.map(b=>`
+    <button type="button" onclick="toggleRNBed('${b}',this)" 
+      style="padding:10px;border:2px solid var(--g200);border-radius:8px;background:white;cursor:pointer;font-size:12px;font-weight:600">
+      ${b}
+    </button>`).join('');
+}
+
+function closeRNModal(){document.getElementById('rnModal').style.display='none';}
+
+async function doRNLogin(){
+  const uname=document.getElementById('rnUsername').value.trim();
+  const pwd=document.getElementById('rnPassword').value;
+  const errEl=document.getElementById('rnLoginErr');
+  if(!uname||!pwd){errEl.textContent='กรุณากรอกข้อมูลให้ครบ';errEl.style.display='block';return;}
+  errEl.style.display='none';
+  showLoad('กำลังเข้าสู่ระบบ...');
+  try{
+    const res=await api('login',{username:uname,password:pwd},null);
+    if(!res||res.status!=='approved') throw new Error('บัญชีนี้ยังไม่ได้รับการอนุมัติ');
+    _rnUser=res;
+    document.getElementById('rnWelcomeName').textContent=res.fullname||res.username;
+    // โหลดผู้ป่วยถ้ายังไม่มี
+    if(!_icAdmittedPts||!_icAdmittedPts.length){
+      const m=new Date().getMonth()+1;
+      const y=new Date().getFullYear();
+      try{
+        let pts=await fetchMonthPts(m,y);
+        _icAdmittedPts=pts.filter(p=>p['สถานะ']==='กำลัง admit');
+      }catch(e){}
+    }
+    // แสดงเตียงที่มีผู้ป่วย admit อยู่
+    const beds=(_icAdmittedPts||[]).map(p=>p['เตียง']).filter(Boolean);
+    document.getElementById('rnBedList').innerHTML=beds.map(b=>`
+      <button onclick="toggleRNBed('${b}',this)" 
+        style="padding:10px;border:2px solid var(--g200);border-radius:8px;background:white;cursor:pointer;font-size:12px;font-weight:600">
+        ${b}
+      </button>`).join('');
+    document.getElementById('rnLoginBox').style.display='none';
+    document.getElementById('rnBedSelectBox').style.display='block';
+  }catch(e){
+    errEl.textContent=e.message||'เข้าสู่ระบบไม่สำเร็จ';
+    errEl.style.display='block';
+  }finally{hideLoad();}
+}
+
+function toggleRNBed(bed,btn){
+  const idx=_rnSelectedBeds.indexOf(bed);
+  if(idx>=0){
+    _rnSelectedBeds.splice(idx,1);
+    btn.style.background='white';
+    btn.style.borderColor='var(--g200)';
+    btn.style.color='inherit';
+  } else {
+    _rnSelectedBeds.push(bed);
+    btn.style.background='#2e7d32';
+    btn.style.borderColor='#2e7d32';
+    btn.style.color='white';
+  }
+  document.getElementById('rnStartBtn').disabled=_rnSelectedBeds.length===0;
+}
+
+let _rnCurrentBedIdx=0;
+
+function openRNForm(){
+  if(!_rnSelectedBeds.length) return;
+  _rnCurrentBedIdx=0;
+  document.getElementById('rnModal').style.display='none';
+  showRNFormForBed(_rnSelectedBeds[0]);
+  document.getElementById('rnFormModal').style.display='flex';
+}
+
+function showRNFormForBed(bedId){
+  const pt=(_icAdmittedPts||[]).find(p=>p['เตียง']===bedId);
+  if(!pt) return;
+  if(!_icBedData[bedId]) _icBedData[bedId]={};
+  const bd=_icBedData[bedId];
+  // โหลดข้อมูลเดิมจาก Sheet ถ้ายังไม่มีใน bd
+  if(!bd._loaded){
+    bd.sos=bd.sos||pt['SOS Score']||'';
+    bd.rass=bd.rass||pt['RASS']||'';
+    bd.news2Score=bd.news2Score!==undefined?bd.news2Score:(pt['NEWS2 Score']||'');
+    bd.news2Date=bd.news2Date||pt['NEWS2 Date']||'';
+    bd.vent_start=bd.vent_start||(pt['Ventilator (Start)']?di(pt['Ventilator (Start)']):'')||'';
+    bd.vent_stop=bd.vent_stop||(pt['Ventilator (End)']?di(pt['Ventilator (End)']):'')||'';
+    bd.aline_start=bd.aline_start||(pt['A-Line (Start)']?di(pt['A-Line (Start)']):'')||'';
+    bd.aline_stop=bd.aline_stop||(pt['A-Line (End)']?di(pt['A-Line (End)']):'')||'';
+    bd.cline_start=bd.cline_start||(pt['C-Line (Start)']?di(pt['C-Line (Start)']):'')||'';
+    bd.cline_stop=bd.cline_stop||(pt['C-Line (End.)']?di(pt['C-Line (End.)']):'')||'';
+    bd.iv_start=bd.iv_start||(pt['IV (Start)']?di(pt['IV (Start)']):'')||'';
+    bd.iv_stop=bd.iv_stop||(pt['IV (End)']?di(pt['IV (End)']):'')||'';
+    bd.fc_start=bd.fc_start||(pt['F/C (Start)']?di(pt['F/C (Start)']):'')||'';
+    bd.fc_stop=bd.fc_stop||(pt['F/C (END)']?di(pt['F/C (END)']):'')||'';
+    bd.icd_start=bd.icd_start||(pt['ICD (Start)']?di(pt['ICD (Start)']):'')||'';
+    bd.icd_stop=bd.icd_stop||(pt['ICD (End)']?di(pt['ICD (End)']):'')||'';
+    bd.icdscLatest=bd.icdscLatest||pt['ICDSC Score']||'';
+    bd.icdscDate=bd.icdscDate||pt['ICDSC Date']||'';
+    bd.icdscMax=bd.icdscMax||pt['ICDSC Max']||'';
+    bd.icdscMaxDate=bd.icdscMaxDate||pt['ICDSC Max Date']||'';
+    bd._loaded=true;
+  }
+  const icItems=[
+    {key:'vent',label:'🫁 Vent'},
+    {key:'aline',label:'💉 A-Line'},
+    {key:'cline',label:'🔗 C-Line'},
+    {key:'iv',label:'🩸 IV'},
+    {key:'fc',label:'🪠 F/C'},
+    {key:'icd',label:'🩺 ICD'},
+  ];
+  document.getElementById('rnFormBedTitle').textContent=`${bedId} — ${pt['ชื่อ-สกุล']||''}`;
+  document.getElementById('rnFormContent').innerHTML=`
+    <div style="font-size:11px;color:#6b7280;margin-bottom:8px">ผู้บันทึก: <b>${_rnUser?.fullname||_rnUser?.username||''}</b></div>
+    <div class="fg" style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:600">👤 ผู้ประเมิน</label>
+      <input type="text" id="rnAssessorInput_${bedId}" value="${_rnUser?.fullname||_rnUser?.username||''}" 
+        placeholder="ชื่อผู้ประเมิน..." 
+        style="width:100%;padding:8px;border:1.5px solid var(--g200);border-radius:8px;font-size:13px">
+    </div>
+    
+    <div class="fsec" style="margin-bottom:12px">
+      <div class="fsec-title" style="font-size:12px">📊 NEWS2 Score</div>
+      <button type="button" onclick="openNews2Assess('${bedId}')" 
+        class="btn btn-outline btn-sm" style="width:100%;background:#e3f2fd;border-color:#1565c0;color:#1565c0;margin-bottom:6px">
+        📋 ประเมิน NEWS2 (7 พารามิเตอร์)
+      </button>
+      <div style="font-size:11px;background:#f9fafb;padding:6px 8px;border-radius:6px;border:1px solid var(--g200)">
+        คะแนน: <b>${bd.news2Score!==undefined&&bd.news2Score!==''?bd.news2Score:'-'}</b>
+        ${bd.news2Score>=7?'<span style="color:#c62828;font-weight:700"> 🔴 High</span>':bd.news2Score>=5?'<span style="color:#e65100;font-weight:700"> 🟠 Medium</span>':bd.news2Score>=1?'<span style="color:#f9a825;font-weight:700"> 🟡 Low</span>':''}
+        ${bd.news2Date?`<span style="color:#6b7280;font-size:10px"> (${bd.news2Date})</span>`:''}
+      </div>
+    </div>
+    <!-- SOS Score -->
+    <div class="fsec" style="margin-bottom:12px">
+      <div class="fsec-title" style="font-size:12px">📊 SOS Score (ล่าสุด)</div>
+      <input type="number" min="0" max="16" value="${bd.sos||''}" placeholder="0-16"
+        oninput="icSet('${bedId}','sos',this.value)"
+        style="width:100%;padding:8px;border:1.5px solid var(--g200);border-radius:8px;font-size:14px">
+    </div>
+
+    <!-- IC Devices -->
+    <div class="fsec" style="margin-bottom:12px">
+      <div class="fsec-title" style="font-size:12px">🩺 IC Devices</div>
+      ${icItems.map(ic=>{
+        const started=bd[ic.key+'_start']||'';
+        const stopped=bd[ic.key+'_stop']||'';
+        return `<div style="display:grid;grid-template-columns:80px 1fr 1fr;gap:4px;align-items:center;padding:4px 0;border-bottom:1px solid var(--g100)">
+          <span style="font-size:10px;font-weight:600">${ic.label}</span>
+          <label style="font-size:9px;color:var(--gray500)">เริ่ม<input type="date" value="${started}" onchange="icSet('${bedId}','${ic.key}_start',this.value)" style="width:100%;font-size:10px;display:block;margin-top:2px"></label>
+          <label style="font-size:9px;color:var(--gray500)">หยุด<input type="date" value="${stopped}" onchange="icSet('${bedId}','${ic.key}_stop',this.value)" style="width:100%;font-size:10px;display:block;margin-top:2px"></label>
+        </div>`;
+      }).join('')}
+    </div>
+    <!-- RASS -->
+    <div class="fsec" style="margin-bottom:12px">
+      <div class="fsec-title" style="font-size:12px">🧠 RASS Score</div>
+      <select id="rnRass_${bedId}" onchange="icSet('${bedId}','rass',this.value)" style="width:100%;padding:8px;border:1.5px solid var(--g200);border-radius:8px;font-size:13px">
+        <option value="">-- เลือก RASS --</option>
+        ${[
+          ['+4','ต่อสู้ ก้าวร้าวรุนแรง เป็นอันตรายทันที'],
+          ['+3','กระวนกระวายมาก ดึงท่อหรือสายต่างๆ'],
+          ['+2','กระวนกระวาย เคลื่อนไหวไม่มีเป้าหมาย'],
+          ['+1','กระสับกระส่าย วิตกกังวล ไม่ก้าวร้าว'],
+          ['0','ตื่นตัวและสงบ'],
+          ['-1','ง่วงซึม ปลุกด้วยเสียงได้ >10 วิ'],
+          ['-2','ง่วงซึมเล็กน้อย สบตาได้ ≤10 วิ'],
+          ['-3','ง่วงซึมปานกลาง ขยับเมื่อเรียก ไม่สบตา'],
+          ['-4','ง่วงซึมลึก ไม่ตอบสนองเสียง'],
+          ['-5','ไม่ตื่น ไม่ตอบสนองทุกอย่าง'],
+        ].map(([v,l])=>`<option value="${v}" ${(bd.rass||'')=== v?'selected':''}>${v}: ${l}</option>`).join('')}
+      </select>
+      ${bd.rass?`<div style="margin-top:4px;font-size:11px;color:${parseInt(bd.rass)>=1?'#c62828':parseInt(bd.rass)<=-3?'#1565c0':'#2e7d32'};font-weight:700">RASS = ${bd.rass}</div>`:''}
+    </div>
+
+    <div class="fsec" style="margin-bottom:12px">
+      <div class="fsec-title" style="font-size:12px">🧠 ICDSC Score</div>
+      <button type="button" onclick="openIcdscAssess('${bedId}')" 
+        class="btn btn-outline btn-sm" style="width:100%;background:#e8f5e9;border-color:#2e7d32;color:#2e7d32;margin-bottom:6px">
+        📋 ประเมิน ICDSC (8 ข้อ)
+      </button>
+      <div style="display:flex;gap:6px;font-size:11px">
+        <span>ล่าสุด: <b>${bd.icdscLatest||'-'}</b> (${bd.icdscDate||'-'})</span>
+        <span>สูงสุด: <b>${bd.icdscMax||'-'}</b></span>
+      </div>
+    </div>
+
+    <!-- ผู้บันทึก -->
+    <input type="hidden" id="rnAssessor_${bedId}" value="${_rnUser?.fullname||_rnUser?.username||''}">
+    
+    <!-- ปุ่มเตียงถัดไป -->
+    ${_rnSelectedBeds.length>1?`
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7280;margin-top:8px">
+      <span>เตียง ${_rnCurrentBedIdx+1}/${_rnSelectedBeds.length}</span>
+      ${_rnCurrentBedIdx<_rnSelectedBeds.length-1?`<button onclick="rnNextBed()" class="btn btn-outline btn-sm">เตียงถัดไป →</button>`:''}
+    </div>`:''}
+  `;
+}
+
+function rnNextBed(){
+  saveRNData(false);
+  _rnCurrentBedIdx++;
+  if(_rnCurrentBedIdx<_rnSelectedBeds.length){
+    showRNFormForBed(_rnSelectedBeds[_rnCurrentBedIdx]);
+  }
+}
+
+async function saveRNData(close=true){
+  const bedId=_rnSelectedBeds[_rnCurrentBedIdx];
+  const pt=(_icAdmittedPts||[]).find(p=>p['เตียง']===bedId);
+  if(!pt) return;
+  const bd=_icBedData[bedId]||{};
+  const assessor=document.getElementById('rnAssessorInput_'+bedId)?.value||_rnUser?.fullname||_rnUser?.username||'';
+  
+  // บันทึก assessor
+  if(assessor) icSet(bedId,'rnAssessor',assessor);
+
+  // ใช้เดือน/ปีปัจจุบันเสมอ
+  const now_=new Date();
+  const rnM=now_.getMonth()+1;
+  const rnY=now_.getFullYear();
+  const updated={...pt};
+  if(bd.news2Score!==undefined) updated['NEWS2 Score']=bd.news2Score;
+  if(bd.news2Date!==undefined) updated['NEWS2 Date']=bd.news2Date;
+  if(bd.news2Assessor!==undefined) updated['NEWS2 Assessor']=bd.news2Assessor;
+  if(bd.rass!==undefined) updated['RASS']=bd.rass;
+  if(bd.icdscLatest!==undefined) updated['ICDSC Score']=bd.icdscLatest;
+  if(bd.icdscDate!==undefined) updated['ICDSC Date']=bd.icdscDate;
+  if(bd.icdscMax!==undefined) updated['ICDSC Max']=bd.icdscMax;
+  if(bd.icdscMaxDate!==undefined) updated['ICDSC Max Date']=bd.icdscMaxDate;
+  if(bd.piEvents!==undefined) updated['Pressure Injury']=JSON.stringify(bd.piEvents);
+  if(bd.ueEvents!==undefined) updated['Unplanned Extubation']=JSON.stringify(bd.ueEvents);
+  if(bd.meEvents!==undefined) updated['Medication Error']=JSON.stringify(bd.meEvents);
+  if(assessor) updated['RN Assessor']=assessor;
+
+  try{
+    const ptId=pt['id']||pt['id ']||'';
+    // ส่ง HN และ เตียง ใน data เผื่อ id ว่าง
+    if(!updated['HN']) updated['HN']=pt['HN']||'';
+    if(!updated['เตียง']) updated['เตียง']=pt['เตียง']||'';
+    await api('savePatient',{},{id:pt['id'],month:rnM,year:rnY,data:updated});
+    if(close){toast(`✅ บันทึกข้อมูล ${bedId} สำเร็จ`);closeRNForm();}
+  }catch(e){toast('⚠️ '+e.message,true);}
+}
+
+function closeRNForm(){
+  document.getElementById('rnFormModal').style.display='none';
+}
+
+function openRNMode_fromIcdsc(){
+  document.getElementById('rnFormModal').style.display='flex';
+}
+
+// ── End RN System ─────────────────────────────────────────
+
+// ── Apache IV Assessment ──────────────────────────────────
+// กรอกค่าจริง แล้วคำนวณ /286
+const APACHE4_FIELDS=[
+  {key:'age',label:'อายุ (ปี)',type:'number',unit:'ปี'},
+  {key:'temp',label:'อุณหภูมิ',type:'number',unit:'°C'},
+  {key:'map',label:'MAP',type:'number',unit:'mmHg'},
+  {key:'hr',label:'Heart Rate',type:'number',unit:'ครั้ง/นาที'},
+  {key:'rr',label:'Respiratory Rate',type:'number',unit:'ครั้ง/นาที'},
+  {key:'fio2',label:'FiO₂',type:'number',unit:'%'},
+  {key:'pao2',label:'PaO₂',type:'number',unit:'mmHg'},
+  {key:'paco2',label:'PaCO₂',type:'number',unit:'mmHg'},
+  {key:'ph',label:'ABG pH',type:'number',unit:''},
+  {key:'na',label:'Sodium (Na)',type:'number',unit:'mEq/L'},
+  {key:'urine',label:'Urine output',type:'number',unit:'mL/24hr'},
+  {key:'cr',label:'Creatinine',type:'number',unit:'mg/dL'},
+  {key:'bun',label:'BUN',type:'number',unit:'mg/dL'},
+  {key:'bs',label:'Blood Sugar',type:'number',unit:'mg/dL'},
+  {key:'albumin',label:'Albumin',type:'number',unit:'g/dL'},
+  {key:'bilirubin',label:'Bilirubin',type:'number',unit:'mg/dL'},
+  {key:'hct',label:'Hematocrit',type:'number',unit:'%'},
+  {key:'wbc',label:'WBC',type:'number',unit:'x1000/mm³'},
+  {key:'gcse',label:'GCS-E',type:'number',unit:'(1-4)'},
+  {key:'gcsv',label:'GCS-V',type:'number',unit:'(1-5)'},
+  {key:'gcsm',label:'GCS-M',type:'number',unit:'(1-6)'},
+  {key:'vent',label:'Mechanical Ventilator',type:'select',opts:['ไม่ใช้','ใช้']},
+];
+
+let _apache4PtId='';
+let _apache4Vals={};
+
+function calcApache4Score(v){
+  let s=0;
+  // Age
+  const age=parseInt(v.age||0);
+  if(age<45)s+=0;else if(age<55)s+=2;else if(age<65)s+=3;else if(age<75)s+=5;else s+=6;
+  // Temp
+  const t=parseFloat(v.temp||0);
+  if(t<30||t>=41)s+=4;else if(t<34)s+=3;else if(t<36)s+=2;else if(t<38.5)s+=0;else s+=1;
+  // MAP
+  const map=parseInt(v.map||0);
+  if(map<50)s+=4;else if(map<70)s+=3;else if(map<110)s+=0;else if(map<130)s+=2;else if(map<160)s+=3;else s+=4;
+  // HR
+  const hr=parseInt(v.hr||0);
+  if(hr<40||hr>=180)s+=4;else if(hr<55)s+=3;else if(hr<70)s+=2;else if(hr<110)s+=0;else if(hr<140)s+=2;else s+=3;
+  // RR
+  const rr=parseInt(v.rr||0);
+  if(rr<6)s+=4;else if(rr<10)s+=3;else if(rr<12)s+=1;else if(rr<25)s+=0;else if(rr<35)s+=1;else if(rr<50)s+=3;else s+=4;
+  // PaO2/FiO2
+  const fio2=parseFloat(v.fio2||21)/100;
+  const pao2=parseFloat(v.pao2||0);
+  const ratio=fio2>0?pao2/fio2:0;
+  if(ratio<100)s+=4;else if(ratio<200)s+=3;else if(ratio<350)s+=2;else s+=0;
+  // pH
+  const ph=parseFloat(v.ph||0);
+  if(ph<7.15)s+=4;else if(ph<7.25)s+=3;else if(ph<7.33)s+=2;else if(ph<7.50)s+=0;else s+=2;
+  // Na
+  const na=parseInt(v.na||0);
+  if(na<110)s+=4;else if(na<120)s+=3;else if(na<130)s+=2;else if(na<150)s+=0;else if(na<155)s+=1;else if(na<160)s+=2;else s+=3;
+  // Urine mL/24hr
+  const urine=parseInt(v.urine||0);
+  if(urine<500)s+=4;else if(urine<900)s+=3;else if(urine<1900)s+=1;else if(urine<3900)s+=0;else s+=1;
+  // Cr
+  const cr=parseFloat(v.cr||0);
+  if(cr<0.5)s+=2;else if(cr<1.5)s+=0;else if(cr<2.0)s+=2;else if(cr<3.5)s+=3;else s+=4;
+  // BUN
+  const bun=parseFloat(v.bun||0);
+  if(bun<5)s+=2;else if(bun<10)s+=0;else if(bun<20)s+=1;else if(bun<30)s+=2;else if(bun<40)s+=3;else s+=4;
+  // BS
+  const bs=parseFloat(v.bs||0);
+  if(bs<40)s+=4;else if(bs<60)s+=3;else if(bs<200)s+=0;else if(bs<350)s+=2;else s+=3;
+  // Albumin
+  const alb=parseFloat(v.albumin||0);
+  if(alb<2.0)s+=4;else if(alb<2.5)s+=3;else if(alb<3.0)s+=1;else s+=0;
+  // Bilirubin
+  const bili=parseFloat(v.bilirubin||0);
+  if(bili<1.0)s+=0;else if(bili<3.0)s+=1;else if(bili<5.0)s+=2;else if(bili<8.0)s+=3;else s+=4;
+  // Hct
+  const hct=parseFloat(v.hct||0);
+  if(hct<20)s+=4;else if(hct<30)s+=2;else if(hct<46)s+=0;else if(hct<50)s+=1;else s+=2;
+  // WBC
+  const wbc=parseFloat(v.wbc||0);
+  if(wbc<1)s+=4;else if(wbc<3)s+=2;else if(wbc<12)s+=0;else if(wbc<20)s+=1;else s+=2;
+  // GCS
+  const gcs=(parseInt(v.gcse||0))+(parseInt(v.gcsv||0))+(parseInt(v.gcsm||0));
+  if(gcs<=5)s+=4;else if(gcs<=8)s+=3;else if(gcs<=10)s+=2;else if(gcs<=13)s+=1;else s+=0;
+  // Ventilator
+  if(v.vent==='ใช้') s+=0; // included in PaO2/FiO2
+  return Math.min(s,286);
+}
+
+function calcApache4Mortality(score){
+  return Math.round(100/(1+Math.exp(-(-3.5+0.146*score))));
+}
+
+function openApache4Assess(ptId){
+  _apache4PtId=ptId;
+  _apache4Vals={};
+  const container=document.getElementById('apache4Items');
+  container.innerHTML=APACHE4_FIELDS.map(f=>`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid #f3f4f6">
+      <label style="font-size:12px;font-weight:600">${f.label} ${f.unit?`<span style="color:#6b7280;font-size:10px">(${f.unit})</span>`:''}}</label>
+      ${f.type==='select'?
+        `<select id="a4_${f.key}" onchange="a4Set('${f.key}',this.value);calcApache4UI()" style="padding:6px;border:1.5px solid var(--g200);border-radius:6px;font-size:12px">
+          ${f.opts.map(o=>`<option value="${o}">${o}</option>`).join('')}
+        </select>`:
+        `<input type="number" id="a4_${f.key}" step="0.01" placeholder="กรอกค่า..." 
+          oninput="a4Set('${f.key}',this.value);calcApache4UI()" 
+          style="padding:6px;border:1.5px solid var(--g200);border-radius:6px;font-size:12px;width:100%">`
+      }
+    </div>`).join('');
+  calcApache4UI();
+  document.getElementById('apache4Modal').style.display='flex';
+}
+
+function a4Set(key,val){_apache4Vals[key]=val;}
+
+function calcApache4UI(){
+  const score=calcApache4Score(_apache4Vals);
+  const mortality=calcApache4Mortality(score);
+  document.getElementById('apache4Total').textContent=score+'/286';
+  document.getElementById('apache4Mortality').textContent='Predicted Mortality: ~'+mortality+'%';
+  const res=document.getElementById('apache4Result');
+  res.style.background=score>=60?'#ffebee':score>=30?'#fff3e0':'#e8f5e9';
+}
+
+function saveApache4(){
+  const score=calcApache4Score(_apache4Vals);
+  const mortality=calcApache4Mortality(score);
+  const scoreEl=document.querySelector('input[name="Apache IV Score"]');
+  const mortEl=document.querySelector('input[name="Apache IV Mortality"]');
+  if(scoreEl) scoreEl.value=score;
+  if(mortEl) mortEl.value=mortality;
+  closeApache4();
+  toast('✅ Apache IV = '+score+'/286 (Mortality ~'+mortality+'%)');
+}
+
+function closeApache4(){document.getElementById('apache4Modal').style.display='none';}
+
+
+// ── NEWS2 Assessment ─────────────────────────────────────
+const NEWS2_PARAMS=[
+  {name:'อัตราการหายใจ (RR)',unit:'ครั้ง/นาที',
+    opts:[{label:'≤8',score:3},{label:'9-11',score:1},{label:'12-20',score:0},{label:'21-24',score:2},{label:'≥25',score:3}]},
+  {name:'SpO₂ (Scale 1)',unit:'%',
+    opts:[{label:'≤91',score:3},{label:'92-93',score:2},{label:'94-95',score:1},{label:'≥96',score:0}]},
+  {name:'SpO₂ (Scale 2 — ผู้ป่วย COPD)',unit:'%',
+    opts:[{label:'≤83',score:3},{label:'84-85',score:2},{label:'86-87',score:1},{label:'88-92 หรือ ≥93 บน O₂',score:0},{label:'93-94 บน O₂',score:1},{label:'95-96 บน O₂',score:2},{label:'≥97 บน O₂',score:3}]},
+  {name:'ออกซิเจน',unit:'',
+    opts:[{label:'Room air',score:0},{label:'On O₂',score:2}]},
+  {name:'ความดันโลหิต Systolic',unit:'mmHg',
+    opts:[{label:'≤90',score:3},{label:'91-100',score:2},{label:'101-110',score:1},{label:'111-219',score:0},{label:'≥220',score:3}]},
+  {name:'ชีพจร (HR)',unit:'ครั้ง/นาที',
+    opts:[{label:'≤40',score:3},{label:'41-50',score:1},{label:'51-90',score:0},{label:'91-110',score:1},{label:'111-130',score:2},{label:'≥131',score:3}]},
+  {name:'ระดับความรู้สึกตัว',unit:'',
+    opts:[{label:'Alert (A)',score:0},{label:'Confusion/Voice/Pain/Unresponsive',score:3}]},
+  {name:'อุณหภูมิ',unit:'°C',
+    opts:[{label:'≤35.0',score:3},{label:'35.1-36.0',score:1},{label:'36.1-38.0',score:0},{label:'38.1-39.0',score:1},{label:'≥39.1',score:2}]},
+];
+
+let _news2BedId='';
+
+function openNews2Assess(bedId){
+  _news2BedId=bedId;
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('news2Date').value=today;
+  const assessorEl=document.getElementById('news2Assessor');
+  if(assessorEl) assessorEl.value=document.getElementById('rnAssessorInput_'+bedId)?.value||_rnUser?.fullname||currentUser?.fullname||'';
+  document.getElementById('news2Items').innerHTML=NEWS2_PARAMS.map((param,i)=>`
+    <div style="padding:10px;border-bottom:1px solid #f3f4f6">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px">${i+1}. ${param.name} ${param.unit?`<span style="color:#6b7280;font-size:10px">(${param.unit})</span>`:''}}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">
+        ${param.opts.map(opt=>`
+          <label style="display:flex;align-items:center;gap:3px;font-size:11px;cursor:pointer;background:#f9fafb;padding:4px 8px;border-radius:6px;border:1px solid var(--g200)">
+            <input type="radio" name="news2_${i}" value="${opt.score}" onchange="calcNews2()">
+            ${opt.label} <span style="color:#6b7280">(${opt.score})</span>
+          </label>`).join('')}
+      </div>
+    </div>`).join('');
+  calcNews2();
+  document.getElementById('news2Modal').style.display='flex';
+}
+
+function calcNews2(){
+  let total=0;
+  NEWS2_PARAMS.forEach((_,i)=>{
+    const v=document.querySelector(`input[name="news2_${i}"]:checked`)?.value;
+    if(v!==undefined) total+=parseInt(v);
+  });
+  document.getElementById('news2Total').textContent=total;
+  const res=document.getElementById('news2Result');
+  const interp=document.getElementById('news2Interpret');
+  if(total>=7){res.style.background='#ffebee';interp.textContent='🔴 High — แจ้งแพทย์ทันที';}
+  else if(total>=5){res.style.background='#fff3e0';interp.textContent='🟠 Medium — เฝ้าระวังใกล้ชิด';}
+  else if(total>=1){res.style.background='#fffde7';interp.textContent='🟡 Low — Monitor ต่อเนื่อง';}
+  else{res.style.background='#e8f5e9';interp.textContent='🟢 Normal';}
+}
+
+function saveNews2Assess(){
+  let total=0;
+  NEWS2_PARAMS.forEach((_,i)=>{
+    const v=document.querySelector(`input[name="news2_${i}"]:checked`)?.value;
+    if(v!==undefined) total+=parseInt(v);
+  });
+  const date=document.getElementById('news2Date').value;
+  const assessor=document.getElementById('news2Assessor')?.value||'';
+  icSet(_news2BedId,'news2Score',total);
+  icSet(_news2BedId,'news2Date',date);
+  icSet(_news2BedId,'news2Assessor',assessor);
+  closeNews2Assess();
+  toast(`✅ NEWS2 = ${total} คะแนน`);
+  showRNFormForBed(_news2BedId);
+}
+
+function closeNews2Assess(){document.getElementById('news2Modal').style.display='none';}
+
+// ── End NEWS2 ─────────────────────────────────────────────
+
+const ICDSC_ITEMS=[
+  {q:'การเปลี่ยนแปลงระดับรู้สึกตัว',desc:'Agitation [RASS 1-4] = 1, ตื่นตัวปกติ [RASS 0] = 0, หลับลึก [RASS -4/-5] = ไม่สามารถประเมิน'},
+  {q:'การขาดความสนใจ (Inattention)',desc:'ไม่สามารถทำตามคำสั่ง หรือฟุ้งซ่าน'},
+  {q:'การเกิดอาการสับสน (Disorientation)',desc:'ไม่รู้ว่าตัวเองอยู่ที่ไหน วันเวลา'},
+  {q:'Hallucination, delusion หรือ psychosis',desc:'มีอาการหลอน หวาดระแวง'},
+  {q:'Psychomotor agitation หรือ retardation',desc:'ดึงสาย IV หรือซึมเฉื่อยผิดปกติ'},
+  {q:'การใช้คำพูดหรืออารมณ์ไม่เหมาะสม',desc:'พูดไม่ต่อเนื่อง หรืออารมณ์แปรปรวน'},
+  {q:'วงจรการหลับ-ตื่นผิดปกติ',desc:'นอนน้อยกว่า 4 ชม. หรือหลับมากช่วงกลางวัน'},
+  {q:'อาการขึ้นลงตลอดเวลา',desc:'อาการเปลี่ยนแปลงในช่วง 24 ชม.'},
+];
+
+let _icdscBedId='';
+
+function openIcdscAssess(bedId){
+  _icdscBedId=bedId;
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('icdscAssessDate').value=today;
+  document.getElementById('icdscItems').innerHTML=ICDSC_ITEMS.map((item,i)=>`
+    <div style="padding:10px;border-bottom:1px solid #f3f4f6">
+      <div style="font-size:12px;font-weight:600;margin-bottom:2px">${i+1}. ${item.q}</div>
+      <div style="font-size:10px;color:#6b7280;margin-bottom:6px">${item.desc}</div>
+      <div style="display:flex;gap:8px">
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">
+          <input type="radio" name="icdsc_${i}" value="0" checked onchange="calcIcdsc()"> 0 ไม่มี
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">
+          <input type="radio" name="icdsc_${i}" value="1" onchange="calcIcdsc()"> 1 มี
+        </label>
+        ${i===0?`<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">
+          <input type="radio" name="icdsc_${i}" value="na" onchange="calcIcdsc()"> ไม่สามารถประเมิน
+        </label>`:''}
+      </div>
+    </div>`).join('');
+  calcIcdsc();
+  document.getElementById('icdscModal').style.display='flex';
+  // ใส่ชื่อผู้ประเมินอัตโนมัติ
+  const assessorEl=document.getElementById('icdscAssessor');
+  if(assessorEl) assessorEl.value=document.getElementById('rnAssessorInput_'+bedId)?.value||_rnUser?.fullname||currentUser?.fullname||'';
+}
+
+function calcIcdsc(){
+  let total=0;
+  ICDSC_ITEMS.forEach((_,i)=>{
+    const v=document.querySelector(`input[name="icdsc_${i}"]:checked`)?.value;
+    if(v==='1') total++;
+  });
+  document.getElementById('icdscTotal').textContent=total;
+  const res=document.getElementById('icdscResult');
+  const interp=document.getElementById('icdscInterpret');
+  if(total===0){res.style.background='#e8f5e9';interp.textContent='ปกติ ไม่มีภาวะ Delirium';}
+  else if(total<=3){res.style.background='#fff3e0';interp.textContent='Subsyndromal Delirium (SSD)';}
+  else{res.style.background='#ffebee';interp.textContent='⚠️ มีภาวะสับสนเฉียบพลัน Delirium';}
+}
+
+function saveIcdscAssess(){
+  let total=0;
+  ICDSC_ITEMS.forEach((_,i)=>{
+    const v=document.querySelector(`input[name="icdsc_${i}"]:checked`)?.value;
+    if(v==='1') total++;
+  });
+  const date=document.getElementById('icdscAssessDate').value;
+  const assessor=document.getElementById('icdscAssessor')?.value||'';
+  const bd=_icBedData[_icdscBedId]||{};
+  icSet(_icdscBedId,'icdscLatest',total);
+  icSet(_icdscBedId,'icdscDate',date);
+  if(assessor) icSet(_icdscBedId,'icdscAssessor',assessor);
+  // อัปเดตค่าสูงสุด
+  if(total>parseInt(bd.icdscMax||0)){
+    icSet(_icdscBedId,'icdscMax',total);
+    icSet(_icdscBedId,'icdscMaxDate',date);
+  }
+  closeIcdscAssess();
+  toast(`✅ บันทึก ICDSC = ${total} คะแนน`);
+  // Re-render IC form
+  renderIcBedList();
+}
+
+function closeIcdscAssess(){document.getElementById('icdscModal').style.display='none';}
+
+function icUpdateIcdscMax(bedId){
+  const bd=_icBedData[bedId]||{};
+  const latest=parseInt(bd.icdscLatest||0);
+  const currentMax=parseInt(bd.icdscMax||0);
+  if(latest>currentMax){
+    icSet(bedId,'icdscMax',latest);
+    icSet(bedId,'icdscMaxDate',bd.icdscDate||new Date().toISOString().split('T')[0]);
+  }
+}
+
+function tryParseJSON(str){try{return str?JSON.parse(str):null;}catch(e){return null;}}
 
 function icSet(bedId,key,val){
   if(!_icBedData[bedId]) _icBedData[bedId]={};
@@ -2654,8 +3610,9 @@ function icCopyMsg(){
 }
 
 async function saveInChargeToPatients(){
-  const m=parseInt(document.getElementById('fMonth')?.value||new Date().getMonth()+1);
-  const y=parseInt(document.getElementById('fYear')?.value||new Date().getFullYear());
+  const now_=new Date();
+  const m=parseInt(document.getElementById('fMonth')?.value||now_.getMonth()+1);
+  const y=parseInt(document.getElementById('fYear')?.value||now_.getFullYear());
   const updates=[];
 
   for(const pt of _icAdmittedPts){
@@ -2670,12 +3627,24 @@ async function saveInChargeToPatients(){
     if(bd.sos!==undefined) updated['SOS Score']=bd.sos;
     if(bd.patType!==undefined) updated['ประเภทผู้ป่วย ICU']=bd.patType;
     if(bd.note!==undefined) updated['หมายเหตุ']=bd.note;
+    // Patient Safety
+    if(bd.icdscLatest!==undefined) updated['ICDSC Score']=bd.icdscLatest;
+    if(bd.icdscDate!==undefined) updated['ICDSC Date']=bd.icdscDate;
+    if(bd.icdscMax!==undefined) updated['ICDSC Max']=bd.icdscMax;
+    if(bd.icdscMaxDate!==undefined) updated['ICDSC Max Date']=bd.icdscMaxDate;
+    if(bd.piEvents!==undefined) updated['Pressure Injury']=JSON.stringify(bd.piEvents);
+    if(bd.ueEvents!==undefined) updated['Unplanned Extubation']=JSON.stringify(bd.ueEvents);
+    if(bd.meEvents!==undefined) updated['Medication Error']=JSON.stringify(bd.meEvents);
+    if(bd.icdscHistory!==undefined) updated['ICDSC History']=JSON.stringify(bd.icdscHistory);
     const icMap={vent:['Ventilator (Start)','Ventilator (End)'],aline:['A-Line (Start)','A-Line (End)'],cline:['C-Line (Start)','C-Line (End.)'],iv:['IV (Start)','IV (End)'],fc:['F/C (Start)','F/C (END)'],icd:['ICD (Start)','ICD (End)']};
     Object.entries(icMap).forEach(([k,[s,e]])=>{
       if(bd[k+'_start']!==undefined) updated[s]=bd[k+'_start'];
       if(bd[k+'_stop']!==undefined) updated[e]=bd[k+'_stop'];
     });
-    updates.push({id:pt['id'],month:m,year:y,data:updated});
+    const ptId=pt['id']||pt['id ']||'';
+    if(!updated['HN']) updated['HN']=pt['HN']||'';
+    if(!updated['เตียง']) updated['เตียง']=pt['เตียง']||'';
+    updates.push({id:ptId,month:m,year:y,data:updated});
   }
 
   if(updates.length===0){toast('ℹ️ ไม่มีผู้ป่วยที่กำลัง Admit');return;}
@@ -2927,7 +3896,30 @@ function applyFilter(){
     if(st==='male'&&!(name.startsWith('นาย')||name.startsWith('เด็กชาย')||name.startsWith('ด.ช.'))) return false;
     if(st==='female'&&(name.startsWith('นาย')||name.startsWith('เด็กชาย')||name.startsWith('ด.ช.'))) return false;
     if(!q) return true;
-    return ['HN','AN','ชื่อ-สกุล','Diagnosis แรกรับ','Diag สุดท้าย','ประเภทผู้ป่วย','แพทย์เจ้าของไข้','U/D','เตียง','เหตุผลจำหน่าย'].some(k=>String(p[k]||'').toLowerCase().includes(q));
+    const field=document.getElementById('srchField')?.value||'all';
+    const matchWord=(str,q)=>{
+      // ถ้า q สั้น ≤4 ตัว ใช้ exact word match
+      if(q.length<=4){
+        const words=String(str||'').toLowerCase().split(/[\s,\/\-\(\)]+/);
+        return words.some(w=>w===q);
+      }
+      return String(str||'').toLowerCase().includes(q);
+    };
+    const fieldMap={
+      name:['ชื่อ-สกุล'],
+      hn:['HN','AN'],
+      dx:['Diagnosis แรกรับ','Diag สุดท้าย'],
+      doctor:['แพทย์เจ้าของไข้'],
+      ud:['U/D'],
+      bed:['เตียง'],
+      dc:['เหตุผลจำหน่าย','สาเหตุการเสียชีวิต'],
+      infection:['VAP','CAUTI','CLABSI','SSI','MDR'],
+    };
+    if(field==='all') return Object.entries(p).some(([k,v])=>{
+      if(['Diagnosis แรกรับ','Diag สุดท้าย','U/D'].includes(k)) return matchWord(v,q);
+      return String(v||'').toLowerCase().includes(q);
+    });
+    return (fieldMap[field]||[]).some(k=>matchWord(p[k],q));
   });
   _curPg=1;renderTbl();
 }
@@ -2945,8 +3937,26 @@ function getRowClass(p){
 }
 function renderTbl(){
   const s=(_curPg-1)*pgSz,e=Math.min(s+pgSz,_filtPts.length),rows=_filtPts.slice(s,e);
-  if(!rows.length){document.getElementById('ptTbl').innerHTML=`<tr><td colspan="17" class="loading-msg">ไม่พบข้อมูล</td></tr>`;document.getElementById('pgInfo').textContent='ไม่พบข้อมูล';return;}
+  if(!rows.length){document.getElementById('ptTbl').innerHTML=`<tr><td colspan="18" class="loading-msg">ไม่พบข้อมูล</td></tr>`;document.getElementById('pgInfo').textContent='ไม่พบข้อมูล';return;}
   const m=parseInt(document.getElementById('fMonth').value),yr=parseInt(document.getElementById('fYear').value);
+  
+  // คำนวณลำดับปีงบ (ต.ค.-ก.ย.) เริ่ม1ใหม่ทุกต.ค.
+  // ปีงบ 69 (ต.ค.68-ก.ย.69): ก่อนเดือนกันยายน 69 มีผู้ป่วยสะสม 652 คนแล้ว
+  const FISCAL_YEAR_OFFSET={69:652}; // ปีงบ พ.ศ. (เลขท้าย 2 หลัก): ยอดสะสมก่อนเริ่มใช้ระบบ
+  const getFiscalYear=(m,y)=>{const be=y+543;return m>=10?((be+1)%100):(be%100);}; // ได้เลขท้าย 2 หลัก พ.ศ.
+  const fy=getFiscalYear(m,yr);
+  const offset=FISCAL_YEAR_OFFSET[fy]||0;
+  let yearSeqCounter=offset;
+  const allSorted=[..._filtPts].sort((a,b)=>(a['Admit (Date)']||'').localeCompare(b['Admit (Date)']||''));
+  const yearSeqMap={};
+  allSorted.forEach(p=>{
+    const isCarryover=p['การรับ']==='ยกมา'||p['การรับ']==='ยกยอด'||dcMatch(p['เหตุผลจำหน่าย']||'','carryover');
+    if(!isCarryover && p['Admit (Date)']){
+      yearSeqCounter++;
+      yearSeqMap[p.id||p['HN']+p['Admit (Date)']]=yearSeqCounter;
+    }
+  });
+
   document.getElementById('ptTbl').innerHTML=rows.map((p,i)=>{
     const st=p['สถานะ']||'กำลัง admit';
     const fl=parseInt(p['Falling'])||0;
@@ -2954,21 +3964,27 @@ function renderTbl(){
     const dc=String(p['เหตุผลจำหน่าย']||'');
     const dcC=dcMatch(dc,'dead')?'f-red':dcMatch(dc,'palliative')?'f-yellow':'';
     const pid=p.id||String(p._row);
+    const isCarryover=p['การรับ']==='ยกมา'||p['การรับ']==='ยกยอด'||dcMatch(dc,'carryover');
+    const yearSeq=isCarryover?'<span style="color:#9ca3af;font-size:10px">ค้าง</span>':`<b style="color:#1565c0">${yearSeqMap[p.id||p['HN']+p['Admit (Date)']]||'-'}</b>`;
     return `<tr class="${getRowClass(p)}">
       <td style="color:#9ca3af">${s+i+1}</td>
+      <td style="text-align:center">${yearSeq}</td>
       <td style="white-space:nowrap">${fmtDate(p['Admit (Date)'])}</td>
-      <td>${p['Admit (Time)']||'-'}</td>
+      <td>${(()=>{const t=p['Admit (Time)'];if(isCarryover){if(!t||t==='0:00'||t==='00:00')return'00:01';return t;}return t||'-';})()}</td>
       <td><span style="background:#e8f5e9;color:#2e7d32;padding:2px 6px;border-radius:5px;font-size:10.5px;font-weight:700">${p['เตียง']||'-'}</span></td>
       <td style="font-weight:500;white-space:nowrap">${p['ชื่อ-สกุล']||'-'}</td>
       <td style="color:#00897b;font-weight:500">${p['HN']||'-'}</td>
       <td>${p['อายุ']||'-'}</td>
       <td style="font-size:10.5px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${String(p['U/D']||'-').substring(0,20)}</td>
-      <td style="font-size:10.5px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(p['Diagnosis แรกรับ'])}">${String(p['Diagnosis แรกรับ']||'').substring(0,30)||'-'}</td>
+      <td style="font-size:10.5px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer" title="${esc(p['Diagnosis แรกรับ'])}" onclick="alert('${esc(p['Diagnosis แรกรับ']||'-')}')">${String(p['Diagnosis แรกรับ']||'').substring(0,30)||'-'}</td>
       <td style="font-size:10.5px;white-space:nowrap">${p['แพทย์เจ้าของไข้']||'-'}</td>
       <td>${p['ประเภทผู้ป่วย']||'-'}</td>
       <td style="white-space:nowrap">${fmtDate(p['D/C (Date)'])||'-'}</td>
       <td style="text-align:center">${(()=>{if(!p['Admit (Date)'])return '-';const dc=p['D/C (Date)']||new Date().toISOString().split('T')[0];return daysBetween(p['Admit (Date)'],dc);})()}</td>
       <td>${dc?`<span class="${dcC}" style="font-size:10.5px">${dc}</span>`:'-'}</td>
+      <td style="font-size:10.5px;white-space:nowrap">${p['ผู้บันทึก D/C']||'-'}</td>
+      <td style="text-align:center;font-weight:700;color:#c62828">${p['Apache IV Score']||'-'}</td>
+      <td style="text-align:center;font-size:10px">${(()=>{try{const ev=JSON.parse(p['Pressure Injury']||'[]');return ev.length?ev.map(e=>e.grade||'').join(', '):'-';}catch(e){return '-';}})()}</td>
       <td>${fl?`<span class="${flC}">${fl}</span>`:'-'}</td>
       <td><span class="badge ${st==='จำหน่ายแล้ว'?'b-dc':'b-admit'}">${st}</span></td>
       <td><span style="display:flex;gap:2px">
@@ -3105,7 +4121,7 @@ function buildForm(p){
         <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <span style="font-size:11px;font-weight:600;color:var(--gray600)">ประเภทพิเศษ:</span>
           ${['Stroke','TBI','Trauma','ไม่มี'].map(v=>`<label style="display:flex;align-items:center;gap:4px;font-size:11.5px;cursor:pointer">
-            <input type="radio" name="dxSpecialType" value="${v}" ${(p['dxSpecialType']||'ไม่มี')===v?'checked':''}> ${v}
+            <input type="radio" name="dxSpecialType" value="${v}" ${(p['dxSpecialType']||'')=== v?'checked':''}> ${v}
           </label>`).join('')}
         </div>
       </div>
@@ -3129,7 +4145,15 @@ function buildForm(p){
         </div>
         ${fg('วันที่ D/C',inp('D/C (Date)','date',p['D/C (Date)']?di(p['D/C (Date)']):''))}
         ${fg('เวลา D/C',inp('D/C (Time)','time',p['D/C (Time)']||''))}
-        ${fg('เหตุผลจำหน่าย',sel('เหตุผลจำหน่าย',DC_REASON,p['เหตุผลจำหน่าย']))}
+        ${fg('เหตุผลจำหน่าย',`<select name="เหตุผลจำหน่าย" onchange="onDCReasonChange(this.value)">${['','...เลือก...',...DC_REASON].map((v,i)=>i===0?'':`<option value="${v}" ${p['เหตุผลจำหน่าย']===v?'selected':''}>${v}</option>`).join('')}</select>`)}
+        <div id="causeOfDeathBox" class="fg" style="display:${p['เหตุผลจำหน่าย']==='Dead'?'block':'none'}">
+          <label>สาเหตุการเสียชีวิต <span style="color:red">*</span></label>
+          ${searchSelAdd('สาเหตุการเสียชีวิต',o('causeOfDeath'),'causeOfDeath',p['สาเหตุการเสียชีวิต']||'')}
+        </div>
+        <div id="referReasonBox" class="fg" style="display:${p['เหตุผลจำหน่าย']==='Refer'?'block':'none'}">
+          <label>เหตุผลที่ต้อง Refer <span style="color:red">*</span></label>
+          ${searchSelAdd('เหตุผลที่ต้อง Refer',o('referReason'),'referReason',p['เหตุผลที่ต้อง Refer']||'')}
+        </div>
         ${fg('Ward/Hospital จำหน่าย',sel('Ward/Hospital',DC_WARD,p['Ward/Hospital']))}
         ${fg('ผู้บันทึก D/C',sel('ผู้บันทึก D/C',o('recorderDC'),p['ผู้บันทึก D/C'],'recorderDC'))}
         ${fg('รวมวันนอน',inp('รวมวันนอน','number',p['รวมวันนอน']||''),'','auto')}
@@ -3169,14 +4193,30 @@ function buildForm(p){
         ${fg('ICD Start',inp('ICD (Start)','date',p['ICD (Start)']?di(p['ICD (Start)']):''))}
         ${fg('ICD End',inp('ICD (End)','date',p['ICD (End)']?di(p['ICD (End)']):''))}
         ${fg('ICD Day',`<input type="number" name="ICD (day)" value="${p['ICD (day)']||''}" readonly style="background:#f0f0f0">`,'','auto')}
+      </div></div>
+      <div class="fsec"><div class="fsec-title">🩺 ICD</div><div class="fgrid">
+        ${fg('ICD Start',inp('ICD (Start)','date',p['ICD (Start)']?di(p['ICD (Start)']):''))}
+        ${fg('ICD End',inp('ICD (End)','date',p['ICD (End)']?di(p['ICD (End)']):''))}
+        ${fg('ICD Day',`<input type="number" name="ICD (day)" value="${p['ICD (day)']||''}" readonly style="background:#f0f0f0">`,'','auto')}
       </div></div>`,
     'tab-assess':`
       <div class="fsec"><div class="fsec-title">การประเมินความเสี่ยง</div><div class="fgrid">
         ${fg('SOS Score',`<input type="number" name="SOS Score" value="${p['SOS Score']||''}" min="0" max="16">`,'','',true)}
         ${fg('Falling score',inp('Falling','number',p['Falling']),'','',true)}
-        ${fg('APACHE II score',inp('APACHE II','number',p['APACHE II']))}
         ${fg('Pain score',inp('Pain score','number',p['Pain score']))}
-      </div></div>`,
+      </div></div>
+      <div class="fsec"><div class="fsec-title">Apache IV Score</div>
+        <button type="button" onclick="openApache4Assess('${p['id']||''}')" 
+          class="btn btn-outline" style="width:100%;background:#fce4ec;border-color:#c62828;color:#c62828;margin-bottom:8px">
+          📋 ประเมิน Apache IV (คำนวณอัตโนมัติ)
+        </button>
+        <div style="font-size:12px;background:#f9fafb;padding:8px;border-radius:8px;border:1px solid var(--g200)">
+          คะแนน Apache IV: <b>${p['Apache IV Score']||'-'}</b>
+          ${p['Apache IV Score']?`<span style="color:#6b7280;font-size:10px"> | Pred. Mortality: ${p['Apache IV Mortality']||'-'}%</span>`:''}
+        </div>
+        <input type="hidden" name="Apache IV Score" value="${p['Apache IV Score']||''}">
+        <input type="hidden" name="Apache IV Mortality" value="${p['Apache IV Mortality']||''}">
+      </div>`,
     'tab-infection':`
       <div class="fsec"><div class="fsec-title">ข้อมูลการติดเชื้อ (HAI)</div><div class="fgrid">
         ${fg('VAP',sel('VAP',['ใช่','ไม่ใช่'],p['VAP']))}
@@ -3194,7 +4234,7 @@ function buildForm(p){
     'id','ชื่อ-สกุล','HN','AN','อายุ','วันเกิด','สิทธิ','Admit (Date)','Admit (Time)',
     'เตียง','การรับ','Ward ที่รับ','ผู้บันทึก Admit','Unplanned ICU','Re-admit ICU',
     'Diagnosis แรกรับ','แพทย์เจ้าของไข้','ประเภทผู้ป่วย','U/D','สถานะ',
-    'D/C (Date)','D/C (Time)','Diag สุดท้าย','เหตุผลจำหน่าย','Ward/Hospital',
+    'D/C (Date)','D/C (Time)','Diag สุดท้าย','เหตุผลจำหน่าย','สาเหตุการเสียชีวิต','เหตุผลที่ต้อง Refer','Ward/Hospital',
     'ผู้บันทึก D/C','รวมวันนอน','Ventilator (Name)','Ventilator (Start)','Ventilator (End)',
     'Vent. (day)','A-Line (Start)','A-Line (End)','A-Line (day)','C-Line (Start)',
     'C-Line (End.)','C-Line (day)','F/C (Start)','F/C (END)','F/C (day)',
@@ -3202,6 +4242,8 @@ function buildForm(p){
     'VAP','CAUTI','CLABSI','SSI','MDR','ชนิดของเชื้อที่พบ','ชนิดสิ่งส่งตรวจ',
     'CPR','Palliative','ผ่าตัด','ชนิดการผ่าตัด','แพ้ยา','ยา HD','SOS Score','ประเภทผู้ป่วย ICU',
     'การหายใจ','dxSpecialType','nurseInCharge','IV (Start)','IV (End)','IV (day)','หมายเหตุ',
+    'Pressure Injury','Pressure Injury Date','Unplanned Extubation','Unplanned Extubation Date',
+    'Medication Error','Medication Error Date','Medication Error Type','ICDSC Score',
     'created_at','updated_at','_row',
   ]);
   const extraFields=Object.entries(p).filter(([k])=>!STANDARD_FIELDS.has(k) && !k.startsWith('_'));
@@ -3224,6 +4266,16 @@ function buildForm(p){
   setTimeout(()=>{setupAutoCalc();if(isDC)onStatusChange('จำหน่ายแล้ว');document.addEventListener('click',function h(e){if(!e.target.closest('.msd-wrap'))document.querySelectorAll('.msd-list.open').forEach(l=>l.classList.remove('open'));});},50);
 }
 
+function onPressureInjuryChange(v){const b=document.getElementById('piDateBox');if(b)b.style.display=v==='Yes'?'contents':'none';}
+function onUnplannedExtubChange(v){const b=document.getElementById('uextDateBox');if(b)b.style.display=v==='Yes'?'contents':'none';}
+function onMedErrorChange(v){const b=document.getElementById('meBox');if(b)b.style.display=v==='Yes'?'contents':'none';}
+
+function onDCReasonChange(v){
+  const deadBox=document.getElementById('causeOfDeathBox');
+  const referBox=document.getElementById('referReasonBox');
+  if(deadBox) deadBox.style.display=v==='Dead'?'block':'none';
+  if(referBox) referBox.style.display=v==='Refer'?'block':'none';
+}
 function onStatusChange(val){const isDC=val==='จำหน่ายแล้ว';const n=document.getElementById('dcRequireNote');if(n)n.style.display=isDC?'block':'none';}
 
 // ตรวจสอบปี ค.ศ. ที่กรอกในช่อง date
@@ -3274,7 +4326,7 @@ function setupAutoCalc(){
   [['Ventilator (Start)','Ventilator (End)','Vent. (day)'],['A-Line (Start)','A-Line (End)','A-Line (day)'],['C-Line (Start)','C-Line (End.)','C-Line (day)'],['F/C (Start)','F/C (END)','F/C (day)'],['ICD (Start)','ICD (End)','ICD (day)']].forEach(([s,e,d])=>{
     const sEl=document.querySelector(`[name="${s}"]`),eEl=document.querySelector(`[name="${e}"]`),dEl=document.querySelector(`[name="${d}"]`);
     if(!sEl||!eEl||!dEl)return;
-    const calc=()=>{if(sEl.value&&eEl.value){const diff=Math.ceil((new Date(eEl.value)-new Date(sEl.value))/(1000*60*60*24));dEl.value=diff>=0?diff:'';}else dEl.value='';};
+    const calc=()=>{if(sEl.value&&eEl.value){const diff=Math.floor((new Date(eEl.value)-new Date(sEl.value))/(1000*60*60*24))+1;dEl.value=Math.max(1,diff);}else if(sEl.value&&!eEl.value){dEl.value='';}else dEl.value='';};
     sEl.addEventListener('change',calc);eEl.addEventListener('change',calc);calc();
   });
   // ── ตรวจปีทุก date input real-time ──────────────────────
@@ -3458,11 +4510,29 @@ async function savePatient(){
   // ─────────────────────────────────────────────────────────
 
   const baseReq={'ชื่อ-สกุล':'ชื่อ-สกุล','HN':'HN','อายุ':'อายุ','สิทธิ':'สิทธิ์','Admit (Date)':'วันที่ Admit','Admit (Time)':'เวลา Admit','เตียง':'เตียง','การรับ':'ประเภทการรับ','ผู้บันทึก Admit':'ผู้บันทึก Admit','Unplanned ICU':'Unplanned ICU','Re-admit ICU':'Re-admit ICU','ประเภทผู้ป่วย':'ประเภทผู้ป่วย','Falling':'Falling score','ผ่าตัด':'ผ่าตัด','Diagnosis แรกรับ':'Diagnosis แรกรับ (Dx)','U/D':'โรคประจำตัว (U/D)'};
+  if(data['การรับ']!=='ยกมา') baseReq['Ward ที่รับ']='Ward ที่รับ';
   const missing=Object.entries(baseReq).filter(([k])=>!data[k]).map(([,v])=>v);
+  // บังคับ Apache IV เฉพาะตอนเพิ่มใหม่
   if(missing.length){toast('กรุณากรอก: '+missing.join(', '),true);return;}
+  // ตรวจสอบวันที่ Admit ว่าตรงกับเดือน/ปีที่เลือกไหม
+  if(data['Admit (Date)']){
+    const admitD=new Date(data['Admit (Date)']);
+    const admitM=admitD.getMonth()+1;
+    const admitY=admitD.getFullYear();
+    if(admitM!==m||admitY!==yr){
+      const mName=MONTHS_TH[admitM-1];
+      const curName=MONTHS_TH[m-1];
+      const confirm=window.confirm(`⚠️ วันที่ Admit (${mName} ${admitY+543}) ไม่ตรงกับเดือนที่เลือก (${curName} ${yr+543})\n\nต้องการบันทึกในเดือน${curName} ${yr+543} จริงหรือไม่?`);
+      if(!confirm){hideLoad();return;}
+    }
+  }
   if(data['สถานะ']==='จำหน่ายแล้ว'){
-    const dcReq={'D/C (Date)':'วันที่ D/C','D/C (Time)':'เวลา D/C','เหตุผลจำหน่าย':'เหตุผลจำหน่าย','Ward/Hospital':'Ward/Hospital','CPR':'CPR','Palliative':'Palliative'};
+    const dcReq={'D/C (Date)':'วันที่ D/C','D/C (Time)':'เวลา D/C','เหตุผลจำหน่าย':'เหตุผลจำหน่าย','CPR':'CPR','Palliative':'Palliative'};
+    if(data['เหตุผลจำหน่าย']!=='Dead') dcReq['Ward/Hospital']='Ward/Hospital';
     const mDC=Object.entries(dcReq).filter(([k])=>!data[k]).map(([,v])=>v);
+    // บังคับกรอกสาเหตุการเสียชีวิตเมื่อ Dead
+    if(data['เหตุผลจำหน่าย']==='Dead'&&!data['สาเหตุการเสียชีวิต']) mDC.push('สาเหตุการเสียชีวิต');
+    if(data['เหตุผลจำหน่าย']==='Refer'&&!data['เหตุผลที่ต้อง Refer']) mDC.push('เหตุผลที่ต้อง Refer');
     if(mDC.length){toast('🚪 D/C: '+mDC.join(', '),true);return;}
     // บังคับกรอก End ของ IC ที่มี Start แต่ไม่มี End
     const icCheck=[
@@ -3486,7 +4556,7 @@ async function savePatient(){
   if(dupBed){toast(`เตียง ${data['เตียง']} ถูกใช้งานอยู่`,true);return;}
   const saveBtn=document.getElementById('saveBtn');saveBtn.textContent='⏳...';saveBtn.disabled=true;showLoad('กำลังบันทึก...');
   try{
-    if(editPtId){await api('savePatient',{},{id:editPtId,month:m,year:yr,data});await api('writeLog',{},{user:currentUser.fullname,action:'แก้ไขผู้ป่วย '+data['ชื่อ-สกุล']});}
+    if(editPtId){await api('savePatient',{},{month:m,year:yr,id:editPtId,data});await api('writeLog',{},{user:currentUser.fullname,action:'แก้ไขผู้ป่วย '+data['ชื่อ-สกุล']});}
     else{await api('savePatient',{},{month:m,year:yr,data});await api('writeLog',{},{user:currentUser.fullname,action:'เพิ่มผู้ป่วย '+data['ชื่อ-สกุล']});}
     closeModal();toast('บันทึกสำเร็จ ✓');
     Object.keys(_dashCache).forEach(k=>delete _dashCache[k]);
@@ -4313,7 +5383,7 @@ async function saveUser(){
   if(!uname||!fname){toast('กรุณากรอกชื่อผู้ใช้และชื่อ-สกุล',true);return;}
   showLoad('กำลังบันทึก...');
   try{
-    const data={username:uname,fullname:fname,role,active,viewAccess:viewAccess||'',hiddenMenus:hiddenMenus||''};
+    const data={username:uname,fullname:fname,role,active,viewAccess:encodeURIComponent(viewAccess||''),hiddenMenus:''};
     if(pwd)data.password=pwd;
     const sp=editUserId?{id:editUserId,...data}:{...data};
     await api('saveUser',sp,null);
@@ -4338,7 +5408,8 @@ function getStats(pts){
   const moveWell=pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'movewell')).length,moveBed=pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'movebed')).length;
   const palliativeDC=pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'palliative')).length,noConsent=pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'noconsent')).length;
   const ventCount=pts.filter(p=>p['Ventilator (Name)']).length,alineCount=pts.filter(p=>p['A-Line (Start)']).length,clineCount=pts.filter(p=>p['C-Line (Start)']).length,fcCount=pts.filter(p=>p['F/C (Start)']).length,icdCount=pts.filter(p=>p['ICD (Start)']).length;
-  const vapCount=pts.filter(p=>p['VAP']==='ใช่').length,cautiCount=pts.filter(p=>p['CAUTI']==='ใช่').length,clabsiCount=pts.filter(p=>p['CLABSI']==='ใช่').length,ssiCount=pts.filter(p=>p['SSI']==='ใช่').length,mdrCount=pts.filter(p=>p['MDR']==='ใช่').length;
+  const newPts=pts.filter(p=>p['การรับ']!=='ยกมา'); // ไม่นับผู้ป่วยค้างเดือน
+  const vapCount=newPts.filter(p=>p['VAP']==='ใช่').length,cautiCount=newPts.filter(p=>p['CAUTI']==='ใช่').length,clabsiCount=newPts.filter(p=>p['CLABSI']==='ใช่').length,ssiCount=newPts.filter(p=>p['SSI']==='ใช่').length,mdrCount=newPts.filter(p=>p['MDR']==='ใช่').length;
   const unplannedCount=pts.filter(p=>p['Unplanned ICU']==='ใช่').length,readmitCount=pts.filter(p=>p['Re-admit ICU']==='ใช่').length;
   const cprCount=pts.filter(p=>p['CPR']==='Yes').length,surgCount=pts.filter(p=>p['ผ่าตัด']==='Yes').length,pallCount=pts.filter(p=>p['Palliative']==='Yes').length;
   const typeCount={};
@@ -4346,15 +5417,44 @@ function getStats(pts){
     const t=normalizePatType(p['ประเภทผู้ป่วย']||'');
     if(t) typeCount[t]=(typeCount[t]||0)+1;
   });
-  const dxMap={};pts.forEach(p=>{const dx=p['Diag สุดท้าย']||p['Diagnosis แรกรับ']||'';String(dx).split(',').forEach(d=>{d=d.trim();if(d)dxMap[d]=(dxMap[d]||0)+1;});});
+  // กลุ่มโรคที่รวมกัน
+  const DX_GROUPS=[
+    {name:'Sepsis',labels:['sepsis','septic shock']},
+    {name:'Pneumonia',labels:['pneumonia','cap','hap','vap']},
+    {name:'ACS',labels:['stemi','nstemi','unstable angina','acs']},
+    {name:'Heart Failure',labels:['adhf','chf','heart failure']},
+    {name:'Stroke',labels:['hemorrhagic stroke','ischemic stroke','cva','ich']},
+    {name:'Trauma',labels:['head injury','tbi','blunt abd','chest trauma','multiple fx']},
+  ];
+  const groupDx=(dxRaw)=>{
+    const dx=String(dxRaw||'').toLowerCase();
+    for(const g of DX_GROUPS){
+      if(g.labels.some(l=>dx.includes(l))) return g.name;
+    }
+    return dxRaw;
+  };
+  const dxMap={};pts.forEach(p=>{
+    const dx=p['Diag สุดท้าย']||p['Diagnosis แรกรับ']||'';
+    String(dx).split(',').forEach(d=>{
+      d=d.trim();if(!d)return;
+      const grp=groupDx(d);
+      dxMap[grp]=(dxMap[grp]||0)+1;
+    });
+  });
   const top5Diag=Object.entries(dxMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([name,count])=>({name,count}));
 
   // 5 อันดับโรคที่เสียชีวิต
-  const dxDeadMap={};pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'dead')).forEach(p=>{const dx=p['Diag สุดท้าย']||p['Diagnosis แรกรับ']||'';String(dx).split(',').forEach(d=>{d=d.trim();if(d)dxDeadMap[d]=(dxDeadMap[d]||0)+1;});});
+  const dxDeadMap={};pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'dead')).forEach(p=>{
+    const dx=p['Diag สุดท้าย']||p['Diagnosis แรกรับ']||'';
+    String(dx).split(',').forEach(d=>{d=d.trim();if(!d)return;const grp=groupDx(d);dxDeadMap[grp]=(dxDeadMap[grp]||0)+1;});
+  });
   const top5Dead=Object.entries(dxDeadMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([name,count])=>({name,count}));
 
   // 5 อันดับโรคที่ส่งต่อ
-  const dxReferMap={};pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'refer')).forEach(p=>{const dx=p['Diag สุดท้าย']||p['Diagnosis แรกรับ']||'';String(dx).split(',').forEach(d=>{d=d.trim();if(d)dxReferMap[d]=(dxReferMap[d]||0)+1;});});
+  const dxReferMap={};pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'refer')).forEach(p=>{
+    const dx=p['Diag สุดท้าย']||p['Diagnosis แรกรับ']||'';
+    String(dx).split(',').forEach(d=>{d=d.trim();if(!d)return;const grp=groupDx(d);dxReferMap[grp]=(dxReferMap[grp]||0)+1;});
+  });
   const top5Refer=Object.entries(dxReferMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([name,count])=>({name,count}));
 
   // รพ.ที่ส่งต่อบ่อยสุด
@@ -4688,6 +5788,7 @@ function renderBedAdmitTable(pts){
       <td style="font-size:11px;font-weight:600">${normalizePatType(p['ประเภทผู้ป่วย']||'-')}</td>
       <td style="font-size:10px;max-width:150px;white-space:normal">${p['Diagnosis แรกรับ']||'-'}</td>
       <td style="font-size:10px;max-width:100px;white-space:normal">${p['U/D']||'-'}</td>
+      <td class="bc-Apache" style="text-align:center;font-weight:700;color:#c62828">${p['Apache IV Score']||'-'}</td>
       <td class="bc-SOS" style="text-align:center">-</td>
       <td class="bc-ประเภท" style="text-align:center">-</td>
       <td class="bc-ยา HD" style="font-size:10px;max-width:120px;white-space:normal">${p['ยา HD']?`<span style="color:#c62828">${p['ยา HD']}</span>`:'-'}</td>
@@ -4697,6 +5798,8 @@ function renderBedAdmitTable(pts){
       <td class="bc-IV" style="text-align:center">${ic(p,'IV (Start)','IV (End)','IV (day)')}</td>
       <td class="bc-F/C" style="text-align:center">${ic(p,'F/C (Start)','F/C (END)','F/C (day)')}</td>
       <td class="bc-ICD" style="text-align:center">${ic(p,'ICD (Start)','ICD (End)','ICD (day)')}</td>
+      <td class="bc-ICDSC" style="text-align:center">${(()=>{const s=p['ICDSC Score'];if(!s)return'-';const n=parseInt(s);return `<span style="font-weight:700;color:${n>=4?'#c62828':n>=1?'#e65100':'#2e7d32'}">${s}${n>=4?' ⚠️':''}</span>`;})()}</td>
+      <td class="bc-PI" style="text-align:center;font-size:10px">${(()=>{try{const ev=JSON.parse(p['Pressure Injury']||'[]');return ev.length?ev.map(e=>e.grade||'').join(', '):'-';}catch(e){return '-';}})()}</td>
       <td class="bc-หมอ" style="font-size:10px">${p['แพทย์เจ้าของไข้']||'-'}</td>
       <td class="bc-พยาบาล" style="font-size:10px">${p['nurseInCharge']||'-'}</td>
     </tr>`;
@@ -5011,6 +6114,8 @@ async function loadIC(){
     <div class="ic-item"><div class="ic-label">🔗 C-Line</div><div class="ic-value">${s.clineCount} คน</div>
       <div class="ic-sub">เดือนนี้ <b>${monthClD}</b> วัน</div>
       <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมทั้งปี ${totalClD} วัน</div></div>
+    <div class="ic-item"><div class="ic-label">🩸 IV</div><div class="ic-value">${pts.filter(p=>p['IV (Start)']).length} คน</div>
+      <div class="ic-sub">เดือนนี้ <b>${icDays(pts,'IV (Start)','IV (End)')}</b> วัน</div></div>
     <div class="ic-item"><div class="ic-label">🪠 F/C</div><div class="ic-value">${s.fcCount} คน</div>
       <div class="ic-sub">เดือนนี้ <b>${monthFcD}</b> วัน</div>
       <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมทั้งปี ${totalFcD} วัน</div></div>
@@ -5023,12 +6128,466 @@ async function loadIC(){
     <div class="ic-item" style="border-color:#9c27b0"><div class="ic-label">⚠️ MDR</div><div class="ic-value" style="color:#7b1fa2">${s.mdrCount}</div></div>`;
   destroyChart('icDevice');const _cc7=getChartColors();dashCharts.icDevice=new Chart(document.getElementById('icDeviceChart'),{type:'line',data:{labels:MONTHS_TH,datasets:[{label:'Vent Days',data:vtD,borderColor:_cc7.c4,tension:0.4,pointRadius:3},{label:'A-Line',data:alD,borderColor:_cc7.c2,tension:0.4,pointRadius:3},{label:'C-Line',data:clD,borderColor:_cc7.c3,tension:0.4,pointRadius:3},{label:'F/C',data:fcD,borderColor:_cc7.c1,tension:0.4,pointRadius:3},{label:'ICD',data:icdD,borderColor:_cc7.c5,tension:0.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:9},usePointStyle:true}}},scales:{y:{beginAtZero:true,ticks:{font:{size:9}}},x:{ticks:{font:{size:9}}}}}});
   destroyChart('icInfection');const _cc8=getChartColors();dashCharts.icInfection=new Chart(document.getElementById('icInfectionChart'),{type:'bar',data:{labels:['VAP','CAUTI','CLABSI','SSI','MDR'],datasets:[{label:'จำนวน (ราย)',data:[s.vapCount,s.cautiCount,s.clabsiCount,s.ssiCount,s.mdrCount],backgroundColor:[_cc8.c4,_cc8.c3,'#f44336','#e91e63',_cc8.c5],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{font:{size:10}}},x:{ticks:{font:{size:11}}}}}});
-  document.getElementById('icTbl').innerHTML=!pts.length?'<tr><td colspan="14" class="loading-msg">ไม่มีข้อมูล</td></tr>':pts.map(p=>{const inf=t=>p[t]==='ใช่'?`<span class="inf-badge">✓</span>`:'-';return `<tr><td style="white-space:nowrap;font-weight:500">${p['ชื่อ-สกุล']||'-'}</td><td style="color:#00897b">${p['HN']||'-'}</td><td>${p['Ventilator (Name)']||'-'}</td><td style="text-align:center">${p['Vent. (day)']||'-'}</td><td style="text-align:center">${p['A-Line (day)']||'-'}</td><td style="text-align:center">${p['C-Line (day)']||'-'}</td><td style="text-align:center">${p['F/C (day)']||'-'}</td><td style="text-align:center">${p['ICD (day)']||'-'}</td><td style="text-align:center">${inf('VAP')}</td><td style="text-align:center">${inf('CAUTI')}</td><td style="text-align:center">${inf('CLABSI')}</td><td style="text-align:center">${inf('SSI')}</td><td style="text-align:center">${p['MDR']==='ใช่'?'<span class="inf-badge" style="background:#ede7f6;color:#7b1fa2;border-color:#9c27b0">MDR</span>':'-'}</td><td style="font-size:10.5px">${p['ชนิดของเชื้อที่พบ']||'-'}</td></tr>`;}).join('');
+  document.getElementById('icTbl').innerHTML=!pts.length?'<tr><td colspan="15" class="loading-msg">ไม่มีข้อมูล</td></tr>':pts.map(p=>{const inf=t=>p[t]==='ใช่'?`<span class="inf-badge">✓</span>`:'-';return `<tr><td style="white-space:nowrap;font-weight:500">${p['ชื่อ-สกุล']||'-'}</td><td style="color:#00897b">${p['HN']||'-'}</td><td>${p['Ventilator (Name)']||'-'}</td><td style="text-align:center">${p['Vent. (day)']||'-'}</td><td style="text-align:center">${p['A-Line (day)']||'-'}</td><td style="text-align:center">${p['C-Line (day)']||'-'}</td><td style="text-align:center">${p['IV (day)']||'-'}</td><td style="text-align:center">${p['F/C (day)']||'-'}</td><td style="text-align:center">${p['ICD (day)']||'-'}</td><td style="text-align:center">${inf('VAP')}</td><td style="text-align:center">${inf('CAUTI')}</td><td style="text-align:center">${inf('CLABSI')}</td><td style="text-align:center">${inf('SSI')}</td><td style="text-align:center">${p['MDR']==='ใช่'?'<span class="inf-badge" style="background:#ede7f6;color:#7b1fa2;border-color:#9c27b0">MDR</span>':'-'}</td><td style="font-size:10.5px">${p['ชนิดของเชื้อที่พบ']||'-'}</td></tr>`;}).join('');
 }
 
 // ============================================================
 // MONTHLY / YEARLY
 // ============================================================
+function toggleStatPeriod(v){
+  document.getElementById('statMonthBox').style.display=v==='month'?'flex':'none';
+  document.getElementById('statYearBox').style.display=v==='year'?'block':'none';
+}
+
+async function loadStatistics(){
+  const period=document.getElementById('statPeriod')?.value||'month';
+  if(period==='year') await loadStatisticsYearly();
+  else await loadMonthly();
+}
+
+async function loadStatisticsYearly(){
+  const fy=parseInt(document.getElementById('statFiscalYear')?.value||new Date().getFullYear());
+  showLoad('กำลังโหลด...');
+  const fiscalMonths=[{m:10,y:fy-1},{m:11,y:fy-1},{m:12,y:fy-1},{m:1,y:fy},{m:2,y:fy},{m:3,y:fy},{m:4,y:fy},{m:5,y:fy},{m:6,y:fy},{m:7,y:fy},{m:8,y:fy},{m:9,y:fy}];
+  let allRes=[];
+  try{allRes=await Promise.all(fiscalMonths.map(({m,y})=>fetchMonthPts(m,y).catch(()=>[])));}
+  catch(e){toast(e.message,true);}finally{hideLoad();}
+  const thS='style="background:#1b5e20;color:#fff;padding:8px 5px;white-space:nowrap;font-weight:700;font-size:10px;text-align:center"';
+  const thL='style="background:#1b5e20;color:#fff;padding:8px 8px;white-space:nowrap;font-weight:700;font-size:10px;text-align:left"';
+  let tbl=`<div style="overflow-x:auto"><table class="sum-tbl" style="font-size:10px"><thead><tr>
+    <th ${thL}>เดือน</th>
+    <th ${thS}>ยอดผู้ป่วย</th><th ${thS}>ยกมา</th><th ${thS}>ค้างเดือน</th>
+    <th ${thS}>วันนอน</th><th ${thS}>รับใหม่</th><th ${thS}>รับย้าย</th><th ${thS}>รวมรับ</th>
+    <th ${thS}>ทุเลาย้าย</th><th ${thS}>ต้องการเตียงย้าย</th><th ${thS}>รวมย้าย Ward</th>
+    <th ${thS}>กลับบ้าน</th><th ${thS}>Refer</th><th ${thS}>Palliative DC</th>
+    <th ${thS}>ไม่สมัครใจ</th><th ${thS}>Dead</th><th ${thS}>อัตราตาย%</th><th ${thS}>รวม DC</th>
+    <th ${thS}>Med</th><th ${thS}>Surg</th><th ${thS}>Neuro</th><th ${thS}>Ortho</th>
+    <th ${thS}>Obs</th><th ${thS}>Gynea</th>
+    <th ${thS}>เฉลี่ย LOS</th><th ${thS}>ครองเตียง%</th>
+    <th ${thS}>ผ่าตัด</th><th ${thS}>CPR</th><th ${thS}>Palliative</th>
+    <th ${thS}>Unplan</th><th ${thS}>Re-admit</th>
+    <th ${thS}>Vent ราย</th><th ${thS}>Vent วัน</th>
+    <th ${thS}>A-Line ราย</th><th ${thS}>A-Line วัน</th>
+    <th ${thS}>C-Line ราย</th><th ${thS}>C-Line วัน</th>
+    <th ${thS}>F/C ราย</th><th ${thS}>F/C วัน</th>
+    <th ${thS}>IV ราย</th><th ${thS}>IV วัน</th>
+    <th ${thS}>ICD ราย</th><th ${thS}>ICD วัน</th>
+    <th ${thS}>VAP</th><th ${thS}>CAUTI</th><th ${thS}>CLABSI</th>
+    <th ${thS}>SSI</th><th ${thS}>MDR</th>
+  </tr></thead><tbody>`;
+  fiscalMonths.forEach(({m:fm,y:fy2},idx)=>{
+    const mp=allRes[idx];const ms=getStats(mp);
+    const na=mp.filter(p=>p['การรับ']==='รับใหม่').length;
+    const tr2=mp.filter(p=>p['การรับ']==='รับย้าย').length;
+    const ci=mp.filter(p=>p['การรับ']==='ยกมา').length;
+    const co=mp.filter(p=>p['สถานะ']==='ค้างเดือน').length;
+    const total=na+tr2+ci;
+    const mw=ms.moveWell+ms.moveBed;
+    const home=mp.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'home')||String(p['เหตุผลจำหน่าย']||'').includes('กลับบ้าน')).length;
+    const mort=ms.discharged?(ms.deadCount/ms.discharged*100).toFixed(1):0;
+    const ml=MONTHS_TH[fm-1]+' '+(fy2+543);
+    const td=(v)=>`<td style="padding:5px 6px;text-align:center;font-size:10px;border-bottom:1px solid #f3f4f6">${v}</td>`;
+    tbl+=`<tr>
+      <td style="padding:5px 8px;font-weight:600;font-size:10px;white-space:nowrap;border-bottom:1px solid #f3f4f6">${ml}</td>
+      ${td(total)}${td(ci)}${td(co)}${td(ms.totalDays)}
+      ${td(na)}${td(tr2)}${td(total)}
+      ${td(ms.moveWell)}${td(ms.moveBed)}${td(mw)}
+      ${td(home)}${td(ms.referCount)}${td(ms.palliativeDC)}${td(ms.noConsent)}
+      ${td(ms.deadCount)}${td(mort+'%')}${td(ms.discharged)}
+      ${td(mp.filter(p=>(p['ประเภทผู้ป่วย']||'').toUpperCase()==='MED').length)}
+      ${td(mp.filter(p=>(p['ประเภทผู้ป่วย']||'').toUpperCase()==='SURG').length)}
+      ${td(mp.filter(p=>(p['ประเภทผู้ป่วย']||'').toLowerCase().includes('neuro')).length)}
+      ${td(mp.filter(p=>(p['ประเภทผู้ป่วย']||'').toLowerCase().includes('ortho')).length)}
+      ${td(mp.filter(p=>(p['ประเภทผู้ป่วย']||'').toLowerCase().includes('obs')).length)}
+      ${td(mp.filter(p=>(p['ประเภทผู้ป่วย']||'').toLowerCase().includes('gyn')).length)}
+      ${td(ms.avgDaysPerPt)}${td(ms.occupancyRate+'%')}
+      ${td(ms.surgCount)}${td(ms.cprCount)}${td(ms.pallCount)}
+      ${td(ms.unplannedCount)}${td(ms.readmitCount)}
+      ${td(mp.filter(p=>p['Ventilator (Start)']).length)}${td(icDays(mp,'Ventilator (Start)','Ventilator (End)'))}
+      ${td(mp.filter(p=>p['A-Line (Start)']).length)}${td(icDays(mp,'A-Line (Start)','A-Line (End)'))}
+      ${td(mp.filter(p=>p['C-Line (Start)']).length)}${td(icDays(mp,'C-Line (Start)','C-Line (End.)'))}
+      ${td(mp.filter(p=>p['F/C (Start)']).length)}${td(icDays(mp,'F/C (Start)','F/C (END)'))}
+      ${td(mp.filter(p=>p['IV (Start)']).length)}${td(icDays(mp,'IV (Start)','IV (End)'))}
+      ${td(mp.filter(p=>p['ICD (Start)']).length)}${td(icDays(mp,'ICD (Start)','ICD (End)'))}
+      ${td(ms.vapCount)}${td(ms.cautiCount)}${td(ms.clabsiCount)}${td(ms.ssiCount)}${td(ms.mdrCount)}
+    </tr>`;
+  });
+  tbl+='</tbody></table></div>';
+  document.getElementById('mContent').innerHTML=`
+    <div class="dash-card-title">📊 ข้อมูลสถิติปีงบ ${fy+543}</div>${tbl}`;
+}
+
+function toggleKpiPeriod(v){
+  document.getElementById('kpiMonthBox').style.display=v==='month'?'flex':'none';
+  document.getElementById('kpiYearBox').style.display=v==='year'?'block':'none';
+}
+
+function toggleDiseasePeriod(v){
+  document.getElementById('diseaseMonthBox').style.display=v==='month'?'flex':'none';
+  document.getElementById('diseaseYearBox').style.display=v==='year'?'block':'none';
+}
+
+// โหลดข้อมูลทุกเดือนในปีงบ (ต.ค.-ก.ย.)
+async function fetchFiscalYearPts(fiscalYear){
+  // ปีงบ 69 = ต.ค.2568-ก.ย.2569
+  const months=[];
+  for(let m=10;m<=12;m++) months.push({m,y:fiscalYear-1});
+  for(let m=1;m<=9;m++) months.push({m,y:fiscalYear});
+  const results=await Promise.all(months.map(({m,y})=>fetchMonthPts(m,y).catch(()=>[])));
+  return results.flat();
+}
+
+// ── ตัวชี้วัดรายโรค ──────────────────────────────────────
+const DISEASE_LIST=[
+  {group:'❤️ โรคหัวใจและหลอดเลือด',items:[
+    {key:'STEMI',labels:['STEMI']},
+    {key:'NSTEMI',labels:['NSTEMI']},
+    {key:'Unstable Angina',labels:['Unstable Angina','UA']},
+    {key:'ACS (Total)',labels:['STEMI','NSTEMI','Unstable Angina','UA','ACS'],isTotal:true},
+    {key:'Cardiogenic shock',labels:['Cardiogenic shock']},
+    {key:'ADHF',labels:['ADHF','Acute decompensated heart failure']},
+    {key:'CHF',labels:['CHF','Congestive heart failure']},
+    {key:'Total HF',labels:['ADHF','CHF','Heart failure'],isTotal:true},
+    {key:'Pulmonary Embolism',labels:['Pulmonary Embolism','PE']},
+    {key:'HT Emergency',labels:['HT Emergency','Hypertensive emergency']},
+  ]},
+  {group:'🦠 โรคติดเชื้อ',items:[
+    {key:'Sepsis',labels:['Sepsis']},
+    {key:'Septic shock',labels:['Septic shock']},
+    {key:'Total Sepsis',labels:['Sepsis','Septic shock'],isTotal:true},
+    {key:'Dengue hemorrhagic fever',labels:['Dengue','DHF']},
+    {key:'Leptospirosis',labels:['Leptospirosis']},
+    {key:'TB',labels:['TB','Tuberculosis']},
+  ]},
+  {group:'🫁 โรคระบบทางเดินหายใจ',items:[
+    {key:'Pneumonia',labels:['Pneumonia']},
+    {key:'CAP',labels:['CAP','Community-acquired']},
+    {key:'HAP',labels:['HAP','Hospital-acquired pneumonia']},
+    {key:'VAP',labels:['VAP','Ventilator-associated']},
+    {key:'Total Pneumonia',labels:['Pneumonia','CAP','HAP','VAP'],isTotal:true},
+    {key:'ARDS',labels:['ARDS']},
+    {key:'COPD',labels:['COPD']},
+    {key:'Asthma',labels:['Asthma']},
+  ]},
+  {group:'🧠 โรคระบบประสาท',items:[
+    {key:'Hemorrhagic stroke',labels:['Hemorrhagic stroke','ICH'],patType:['neuro','surg']},
+    {key:'Ischemic stroke',labels:['Ischemic stroke','CVA'],patType:['med']},
+    {key:'Total Stroke',labels:['Hemorrhagic stroke','ICH','Ischemic stroke','CVA','stroke'],isTotal:true},
+    {key:'Head injury/TBI',labels:['Head injury','TBI','Traumatic brain']},
+  ]},
+  {group:'🩸 โรคไต',items:[
+    {key:'CKD',labels:['CKD','Chronic kidney']},
+    {key:'ESRD',labels:['ESRD','End-stage renal']},
+    {key:'AKI',labels:['AKI','Acute kidney']},
+  ]},
+  {group:'🏥 อื่นๆ',items:[
+    {key:'Blunt Abd. Trauma',labels:['Blunt Abd','Abdominal trauma']},
+    {key:'Chest Trauma',labels:['Chest Trauma','Chest injury']},
+    {key:'Multiple Fx',labels:['Multiple Fx','Multiple fracture']},
+    {key:'Hypovolumic shock',labels:['Hypovolumic','Hypovolemic shock']},
+    {key:'PU perforate',labels:['PU perforate','Peptic ulcer perforation']},
+    {key:'DKA',labels:['DKA','Diabetic ketoacidosis']},
+    {key:'PIH',labels:['PIH','Pregnancy-induced hypertension']},
+    {key:'PPH',labels:['PPH','Postpartum hemorrhage']},
+    {key:'CA',labels:['Cancer','Carcinoma','CA ']},
+    {key:'จิตเวช',labels:['จิตเวช','Psychiatric']},
+    {key:'UP',labels:[' UP','Urinary perforation','Urosepsis']},
+  ]},
+];
+
+async function loadDiseaseIndicator(){
+  const period=document.getElementById('diseasePeriod')?.value||'month';
+  showLoad('กำลังโหลด...');
+  let pts=[],periodName='',allRes=[],fiscalMonths=[];
+
+  try{
+    if(period==='year'){
+      const fy=parseInt(document.getElementById('diseaseFiscalYear')?.value||new Date().getFullYear());
+      fiscalMonths=[{m:10,y:fy-1},{m:11,y:fy-1},{m:12,y:fy-1},{m:1,y:fy},{m:2,y:fy},{m:3,y:fy},{m:4,y:fy},{m:5,y:fy},{m:6,y:fy},{m:7,y:fy},{m:8,y:fy},{m:9,y:fy}];
+      allRes=await Promise.all(fiscalMonths.map(({m,y})=>fetchMonthPts(m,y).catch(()=>[])));
+      pts=allRes.flat();
+      periodName=`ปีงบ ${fy+543} (ต.ค.${fy+542}-ก.ย.${fy+543})`;
+    } else {
+      const m=parseInt(document.getElementById('diseaseMonth').value);
+      const y=parseInt(document.getElementById('diseaseYear').value);
+      pts=await fetchMonthPts(m,y);
+      periodName=MONTHS_TH[m-1]+' '+(y+543);
+    }
+  }catch(e){toast(e.message,true);}finally{hideLoad();}
+
+  const matchDx=(p,disease)=>{
+    const dx=String(p['Diagnosis แรกรับ']||'').toLowerCase();
+    const patType=String(p['ประเภทผู้ป่วย']||'').toLowerCase();
+    const dxMatch=disease.labels.some(l=>{
+      const label=l.toLowerCase().trim();
+      if(label.length<=4){
+        const words=dx.split(/[\s,\/\-\(\)]+/);
+        return words.some(w=>w===label);
+      }
+      return dx.includes(label);
+    });
+    if(!dxMatch) return false;
+    // ถ้ามี patType filter ให้ตรวจด้วย
+    if(disease.patType && disease.patType.length>0){
+      return disease.patType.some(t=>patType.includes(t));
+    }
+    return true;
+  };
+  const isDead=(p)=>String(p['เหตุผลจำหน่าย']||'').toLowerCase().includes('dead');
+
+  if(period==='year' && fiscalMonths.length){
+    // เลือกโรคแล้วแสดงตารางรายเดือน
+    const allDiseases=DISEASE_LIST.flatMap(g=>g.items);
+    const selId='diseaseSelect_'+Date.now();
+    const tableId='diseaseYearTable_'+Date.now();
+    
+    const renderDiseaseTable=(diseaseKey)=>{
+      const disease=allDiseases.find(d=>d.key===diseaseKey);
+      if(!disease) return '';
+      let tbl=`<table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#1b5e20;color:white">
+          <th style="padding:8px 10px;text-align:left">เดือน</th>
+          <th style="padding:8px 10px;text-align:center">จำนวน (ราย)</th>
+          <th style="padding:8px 10px;text-align:center">เสียชีวิต (ราย)</th>
+          <th style="padding:8px 10px;text-align:center">อัตราตาย (%)</th>
+        </tr></thead><tbody>`;
+      let totalCount=0,totalDead=0;
+      fiscalMonths.forEach(({m:fm,y:fy2},idx)=>{
+        const mp=allRes[idx];
+        const matched=mp.filter(p=>matchDx(p,disease));
+        const count=matched.length;
+        const dead=matched.filter(isDead).length;
+        const rate=count>0?(dead/count*100).toFixed(1):'-';
+        totalCount+=count;totalDead+=dead;
+        const ml=MONTHS_TH[fm-1]+' '+(fy2+543);
+        tbl+=`<tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:7px 10px;font-weight:600">${ml}</td>
+          <td style="padding:7px 10px;text-align:center;font-weight:700">${count||'-'}</td>
+          <td style="padding:7px 10px;text-align:center;color:#c62828;font-weight:700">${dead||'-'}</td>
+          <td style="padding:7px 10px;text-align:center;color:${parseFloat(rate)>30?'#c62828':parseFloat(rate)>15?'#e65100':'#2e7d32'}">${rate==='-'?'-':rate+'%'}</td>
+        </tr>`;
+      });
+      const totalRate=totalCount>0?(totalDead/totalCount*100).toFixed(1):'-';
+      tbl+=`<tr style="background:#e8f5e9;font-weight:700">
+        <td style="padding:7px 10px">รวมทั้งปี</td>
+        <td style="padding:7px 10px;text-align:center">${totalCount}</td>
+        <td style="padding:7px 10px;text-align:center;color:#c62828">${totalDead}</td>
+        <td style="padding:7px 10px;text-align:center">${totalRate==='-'?'-':totalRate+'%'}</td>
+      </tr></tbody></table>`;
+      return tbl;
+    };
+
+    const firstDisease=allDiseases[0].key;
+    document.getElementById('diseaseContent').innerHTML=`
+      <div style="font-size:13px;color:#6b7280;font-weight:600;padding:4px 0 10px">${periodName}</div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:600;margin-right:8px">เลือกโรค:</label>
+        <select id="${selId}" class="sel-sm" style="font-size:12px;padding:6px 10px" onchange="document.getElementById('${tableId}').innerHTML=window._renderDiseaseTable(this.value)">
+          ${DISEASE_LIST.map(g=>`<optgroup label="${g.group}">${g.items.map(d=>`<option value="${d.key}">${d.key}</option>`).join('')}</optgroup>`).join('')}
+        </select>
+      </div>
+      <div id="${tableId}" style="border-radius:8px;overflow:hidden">${renderDiseaseTable(firstDisease)}</div>`;
+    
+    window._renderDiseaseTable=renderDiseaseTable;
+    return;
+  }
+
+  // รายเดือน — แสดงตารางแบบเดิม
+  let html=`<div style="font-size:13px;color:#6b7280;font-weight:600;padding:4px 0 10px">${periodName}</div>`;
+  DISEASE_LIST.forEach(group=>{
+    html+=`<div style="margin-bottom:12px">
+      <div style="background:#1b5e20;color:white;padding:8px 12px;border-radius:8px 8px 0 0;font-weight:700;font-size:13px">${group.group}</div>
+      <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-top:none">
+        <thead><tr style="background:#f9fafb;font-size:11px;color:#6b7280">
+          <th style="padding:6px 10px;text-align:left">โรค</th>
+          <th style="padding:6px 10px;text-align:center">จำนวน (ราย)</th>
+          <th style="padding:6px 10px;text-align:center">เสียชีวิต (ราย)</th>
+          <th style="padding:6px 10px;text-align:center">อัตราตาย (%)</th>
+        </tr></thead><tbody>`;
+    group.items.forEach(disease=>{
+      const matched=pts.filter(p=>matchDx(p,disease));
+      const count=matched.length;
+      const dead=matched.filter(isDead).length;
+      const rate=count>0?(dead/count*100).toFixed(1):'-';
+      const isTotal=disease.isTotal;
+      html+=`<tr style="border-bottom:1px solid #f3f4f6;${isTotal?'background:#f0f7f0;font-weight:600':''}">
+        <td style="padding:8px 10px;font-size:12px">${isTotal?'<b>':''}${disease.key}${isTotal?'</b>':''}</td>
+        <td style="padding:8px 10px;text-align:center;font-weight:700;font-size:13px">${count}</td>
+        <td style="padding:8px 10px;text-align:center;color:#c62828;font-weight:700">${dead}</td>
+        <td style="padding:8px 10px;text-align:center;color:${parseFloat(rate)>30?'#c62828':parseFloat(rate)>15?'#e65100':'#2e7d32'}">${rate==='-'?'-':rate+'%'}</td>
+      </tr>`;
+    });
+    html+=`</tbody></table></div>`;
+  });
+  document.getElementById('diseaseContent').innerHTML=html;
+}
+
+async function loadKPI(){
+  const period=document.getElementById('kpiPeriod')?.value||'month';
+  let m,y,pts=[],periodLabel='';
+  showLoad('กำลังโหลด KPI...');
+  try{
+    if(period==='year'){
+      const fy=parseInt(document.getElementById('kpiFiscalYear')?.value||new Date().getFullYear());
+      // โหลดทุกเดือนในปีงบ
+      const fiscalMonths=[{m:10,y:fy-1},{m:11,y:fy-1},{m:12,y:fy-1},{m:1,y:fy},{m:2,y:fy},{m:3,y:fy},{m:4,y:fy},{m:5,y:fy},{m:6,y:fy},{m:7,y:fy},{m:8,y:fy},{m:9,y:fy}];
+      const allRes=await Promise.all(fiscalMonths.map(({m,y})=>fetchMonthPts(m,y).catch(()=>[])));
+      pts=allRes.flat();
+      m=9;y=fy;
+      periodLabel=`ปีงบ ${fy+543} (ต.ค.${fy+542}-ก.ย.${fy+543})`;
+
+      const s=getStats(pts);
+      const thS='style="background:#1b5e20;color:#ffffff;padding:8px 6px;white-space:nowrap;font-weight:700;font-size:10px;text-align:center"';
+      const thL='style="background:#1b5e20;color:#ffffff;padding:8px 8px;white-space:nowrap;font-weight:700;font-size:10px;text-align:left"';
+      let monthly=`<div style="overflow-x:auto;margin-top:12px"><table class="sum-tbl" style="font-size:10px"><thead><tr>
+        <th ${thL}>เดือน</th>
+        <th ${thS}>จำนวนผู้ป่วย</th>
+        <th ${thS}>Mortality rate%</th>
+        <th ${thS}>Readmission%</th>
+        <th ${thS}>LOS เฉลี่ย</th>
+        <th ${thS}>Bed occupancy%</th>
+        <th ${thS}>VAP</th>
+        <th ${thS}>CLABSI</th>
+        <th ${thS}>CAUTI</th>
+        <th ${thS}>Pressure Injury</th>
+        <th ${thS}>Unplanned Extub</th>
+        <th ${thS}>Med Error</th>
+        <th ${thS}>Delirium</th>
+        <th ${thS}>Unplan ICU</th>
+        <th ${thS}>Re-admit ICU</th>
+        <th ${thS}>CPR</th>
+        <th ${thS}>Palliative</th>
+        <th ${thS}>Sepsis Mortality%</th>
+      </tr></thead><tbody>`;
+      fiscalMonths.forEach(({m:fm,y:fy2},idx)=>{
+        const mp=allRes[idx];const ms=getStats(mp);
+        const ml=MONTHS_TH[fm-1]+' '+(fy2+543);
+        const mort=ms.discharged?(ms.deadCount/ms.discharged*100).toFixed(1):0;
+        const readmit=ms.total>0?(ms.readmitCount/ms.total*100).toFixed(1):0;
+        const ventD=icDays(mp,'Ventilator (Start)','Ventilator (End)')||1;
+        const cvcD=icDays(mp,'C-Line (Start)','C-Line (End.)')||1;
+        const fcD=icDays(mp,'F/C (Start)','F/C (END)')||1;
+        const vapRate=(ms.vapCount/ventD*1000).toFixed(2);
+        const clabsiRate=(ms.clabsiCount/cvcD*1000).toFixed(2);
+        const cautiRate=(ms.cautiCount/fcD*1000).toFixed(2);
+        const sepsisPts=mp.filter(p=>String(p['Diagnosis แรกรับ']||'').toLowerCase().includes('sepsis'));
+        const sepsisMort=sepsisPts.length>0?(sepsisPts.filter(p=>String(p['เหตุผลจำหน่าย']||'').toLowerCase().includes('dead')).length/sepsisPts.length*100).toFixed(1):'-';
+        const piCount=mp.filter(p=>{try{return JSON.parse(p['Pressure Injury']||'[]').length>0;}catch(e){return false;}}).length;
+        const ueCount=mp.filter(p=>{try{return JSON.parse(p['Unplanned Extubation']||'[]').length>0;}catch(e){return false;}}).length;
+        const meCount=mp.filter(p=>{try{return JSON.parse(p['Medication Error']||'[]').length>0;}catch(e){return false;}}).length;
+        const delCount=mp.filter(p=>parseInt(p['ICDSC Score']||0)>=4).length;
+        const td=(v,bold=false,color='')=>`<td style="padding:5px 6px;text-align:center;font-size:10px;${bold?'font-weight:700;':''}${color?'color:'+color+';':''}border-bottom:1px solid #f3f4f6">${v}</td>`;
+        monthly+=`<tr>
+          <td style="padding:5px 8px;font-weight:600;font-size:10px;white-space:nowrap;border-bottom:1px solid #f3f4f6">${ml}</td>
+          ${td(ms.total,true)}
+          ${td(mort+'%',false,parseFloat(mort)>15?'#c62828':'#2e7d32')}
+          ${td(readmit+'%',false,parseFloat(readmit)>5?'#c62828':'#2e7d32')}
+          ${td(ms.avgDaysPerPt)}
+          ${td(ms.occupancyRate+'%',false,parseFloat(ms.occupancyRate)>85?'#c62828':parseFloat(ms.occupancyRate)<70?'#e65100':'#2e7d32')}
+          ${td(vapRate,false,parseFloat(vapRate)>1?'#c62828':'#2e7d32')}
+          ${td(clabsiRate,false,parseFloat(clabsiRate)>1?'#c62828':'#2e7d32')}
+          ${td(cautiRate,false,parseFloat(cautiRate)>1?'#c62828':'#2e7d32')}
+          ${td(piCount,false,piCount>0?'#c62828':'#2e7d32')}
+          ${td(ueCount,false,ueCount>0?'#c62828':'#2e7d32')}
+          ${td(meCount,false,meCount>0?'#c62828':'#2e7d32')}
+          ${td(delCount)}
+          ${td(ms.unplannedCount)}
+          ${td(ms.readmitCount)}
+          ${td(ms.cprCount)}
+          ${td(ms.pallCount)}
+          ${td(sepsisMort==='-'?'-':sepsisMort==='0.0'?'0%':sepsisMort+'%')}
+        </tr>`;
+      });
+      monthly+='</tbody></table></div>';
+      hideLoad();
+      document.getElementById('kpiContent').innerHTML=`
+        <div style="padding:10px 0 6px;font-size:13px;color:#6b7280;font-weight:600">${periodLabel}</div>
+        <div style="font-size:13px;font-weight:700;color:#1b5e20;margin:8px 0 8px">📊 ตารางสรุป KPI รายเดือน</div>
+        ${monthly}`;
+      return;
+    } else {
+      m=parseInt(document.getElementById('kpiMonth').value);
+      y=parseInt(document.getElementById('kpiYear').value);
+      pts=await fetchMonthPts(m,y);
+      periodLabel=`${MONTHS_TH[m-1]} ${y+543}`;
+    }
+  }catch(e){toast(e.message,true);}finally{hideLoad();}
+  const s=getStats(pts);
+  const daysInMonth=new Date(y,m,0).getDate();
+  const totalDC=s.discharged||1;
+  const totalDays=s.totalDays||1;
+  const ventDays=icDays(pts,'Ventilator (Start)','Ventilator (End)');
+  const cvcDays=icDays(pts,'C-Line (Start)','C-Line (End.)');
+  const fcDays=icDays(pts,'F/C (Start)','F/C (END)');
+  const monthName=MONTHS_TH[m-1]+' '+(y+543);
+
+  const kpiRow=(icon,name,value,unit,target,pass)=>`
+    <tr style="border-bottom:1px solid #f3f4f6">
+      <td style="padding:8px 10px;font-size:13px">${icon} ${name}</td>
+      <td style="padding:8px 10px;text-align:center;font-weight:700;font-size:14px;color:${pass?'#2e7d32':'#c62828'}">${value}</td>
+      <td style="padding:8px 10px;text-align:center;font-size:12px;color:#6b7280">${unit}</td>
+      <td style="padding:8px 10px;text-align:center;font-size:12px;color:#6b7280">${target}</td>
+      <td style="padding:8px 10px;text-align:center">${pass?'<span style="color:#2e7d32;font-weight:700">✅</span>':'<span style="color:#c62828;font-weight:700">❌</span>'}</td>
+    </tr>`;
+
+  const table=(title,color,rows)=>`
+    <div class="dash-card" style="margin-bottom:14px;padding:0;overflow:hidden;border-radius:10px">
+      <div style="background:${color};color:white;padding:10px 14px;font-weight:700;font-size:13px">${title}</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:#f9fafb;font-size:11px;color:#6b7280">
+          <th style="padding:6px 10px;text-align:left">ตัวชี้วัด</th>
+          <th style="padding:6px 10px;text-align:center">ค่าที่ได้</th>
+          <th style="padding:6px 10px;text-align:center">หน่วย</th>
+          <th style="padding:6px 10px;text-align:center">เป้าหมาย</th>
+          <th style="padding:6px 10px;text-align:center">ผล</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  // ── คำนวณ ──────────────────────────────────
+  const icuMortality=(s.deadCount/Math.max(totalDC,1)*100).toFixed(1);
+  const sepsisDead=pts.filter(p=>String(p['สาเหตุการเสียชีวิต']||'').toLowerCase().includes('sepsis')||String(p['สาเหตุการเสียชีวิต']||'').toLowerCase().includes('septic')).length;
+  const sepsisPts=pts.filter(p=>String(p['Diagnosis แรกรับ']||'').toLowerCase().includes('sepsis')||String(p['Diagnosis แรกรับ']||'').toLowerCase().includes('septic'));
+  const sepsisMortality=sepsisPts.length>0?(sepsisDead/sepsisPts.length*100).toFixed(1):'-';
+  const readmitRate=(s.readmitCount/Math.max(totalDC,1)*100).toFixed(1);
+  const avgLOS=s.avgDaysPerPt||0;
+  const vap=ventDays>0?(s.vapCount/ventDays*1000).toFixed(2):0;
+  const clabsi=cvcDays>0?(s.clabsiCount/cvcDays*1000).toFixed(2):0;
+  const cauti=fcDays>0?(s.cautiCount/fcDays*1000).toFixed(2):0;
+  const occupancy=(totalDays/(TOTAL_BEDS*daysInMonth)*100).toFixed(1);
+
+  document.getElementById('kpiContent').innerHTML=`
+    <div style="padding:10px 0 6px;font-size:13px;color:#6b7280;font-weight:600">${periodLabel}</div>
+
+    ${table('🏥 1. Clinical Outcomes & Mortality','#1565c0',`
+      ${kpiRow('💀','ICU Mortality Rate',icuMortality+'%','%','< 15%',parseFloat(icuMortality)<15)}
+      ${kpiRow('🔄','Unplanned ICU Readmission',readmitRate+'%','%','< 5%',parseFloat(readmitRate)<5)}
+      ${kpiRow('🩸','Sepsis Mortality',sepsisMortality==='−'?'−':sepsisMortality+'%','%','< 30%',sepsisMortality==='-'||parseFloat(sepsisMortality)<30)}
+    `)}
+
+    ${table('🛡️ 2. Patient Safety & Complications','#6a1b9a',`
+      ${kpiRow('🌬️','VAP Rate',vap,'ต่อ 1000 Vent-day','< 1.0',parseFloat(vap)<1)}
+      ${kpiRow('🔗','CLABSI Rate',clabsi,'ต่อ 1000 CVC-day','< 1.0',parseFloat(clabsi)<1)}
+      ${kpiRow('🪠','CAUTI Rate',cauti,'ต่อ 1000 F/C-day','< 1.0',parseFloat(cauti)<1)}
+      ${kpiRow('🩹','Pressure Injury',pts.filter(p=>p['Pressure Injury']==='Yes').length,'ราย','0 ราย',pts.filter(p=>p['Pressure Injury']==='Yes').length===0)}
+      ${kpiRow('💊','Medication Error',pts.filter(p=>p['Medication Error']==='Yes').length,'ครั้ง','0 ครั้ง',pts.filter(p=>p['Medication Error']==='Yes').length===0)}
+      ${kpiRow('😮','Unplanned Extubation',pts.filter(p=>p['Unplanned Extubation']==='Yes').length,'ครั้ง','< 1 ต่อ 100 Vent-day',pts.filter(p=>p['Unplanned Extubation']==='Yes').length===0)}
+    `)}
+
+    ${table('⚙️ 3. Process & Efficiency','#2e7d32',`
+      ${kpiRow('🛏️','Average LOS',avgLOS,'วัน','< 7 วัน',parseFloat(avgLOS)<7)}
+      ${kpiRow('📊','Bed Occupancy Rate',occupancy+'%','%','70-85%',parseFloat(occupancy)>=70&&parseFloat(occupancy)<=85)}
+      ${kpiRow('🙌','Hand Hygiene Compliance','-','%','≥ 80%',false)}
+      ${kpiRow('🧠','Delirium (ICDSC≥4)',pts.filter(p=>parseInt(p['ICDSC Score']||0)>=4).length,'ราย','-',true)}
+    `)}
+
+    ${table('👨‍👩‍👧 4. Patient & Family-Centered','#e65100',`
+      ${kpiRow('😊','Patient/Family Satisfaction','-','%','≥ 80%',false)}
+      ${kpiRow('📋','Family Meeting Documentation','-','%','≥ 90%',false)}
+      ${kpiRow('🤝','Palliative Care Consultation',s.pallCount,'ราย','-',true)}
+    `)}`;}
+
 async function loadMonthly(){
   const m=parseInt(document.getElementById('mMonth').value),y=parseInt(document.getElementById('mYear').value);
   showLoad('กำลังโหลด...');let pts=[];try{pts=await fetchMonthPts(m,y);}catch(e){toast(e.message,true);}finally{hideLoad();}

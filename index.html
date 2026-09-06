@@ -3915,6 +3915,8 @@ function applyFilter(){
       'trauma':['Chest trauma','Blunt Abd','Spinal injury','Pelvic fracture','Multiple Fx','Polytrauma'],
       'acs':['STEMI','NSTEMI','Unstable Angina','ACS'],
       'hf':['ADHF','CHF','Heart failure'],
+      'ไต':['CKD','ESRD','AKI','Chronic kidney','End-stage renal','Acute kidney'],
+      'gi':['Upper GI','Lower GI','PU perforate','DU perforate','Bowel obstruction','Mesenteric ischemia'],
     };
     const grpMatch=Object.entries(groupSearch).find(([k])=>k===q||q===k);
     if(grpMatch){
@@ -6305,10 +6307,12 @@ const DISEASE_LIST=[
     {key:'Traumatic SAH',labels:['Traumatic SAH','tSAH']},
     {key:'Total TBI',labels:['MHI','Mild head injury','Moderate head injury','MoHI','Moderate HI','SHI','Severe head injury','EDH','SDH','Traumatic ICH','tICH','DAI','Skull fracture','Traumatic SAH','TBI','Head injury'],isTotal:true},
   ]},
-  {group:'🩸 โรคไต',items:[
+  {group:'🫘 Renal Disease',items:[
     {key:'CKD',labels:['CKD','Chronic kidney']},
-    {key:'ESRD',labels:['ESRD','End-stage renal']},
-    {key:'AKI',labels:['AKI','Acute kidney']},
+    {key:'ESRD/CKD5',labels:['ESRD','End-stage renal','CKD5']},
+    {key:'AKI on CKD',labels:['AKI on CKD','AKI on top CKD']},
+    {key:'Total CKD',labels:['CKD','Chronic kidney','ESRD','End-stage renal','CKD5','AKI on CKD'],isTotal:true},
+    {key:'AKI',labels:['AKI','Acute kidney injury']},
   ]},
   {group:'🚑 Trauma',items:[
     {key:'Chest Trauma',labels:['Chest trauma','Chest injury']},

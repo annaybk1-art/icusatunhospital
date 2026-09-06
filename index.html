@@ -5423,15 +5423,17 @@ async function fetchMonthPts(m,y){
 }
 
 function getStats(pts){
-  const total=pts.length,admitted=pts.filter(p=>p['สถานะ']!=='จำหน่ายแล้ว').length,discharged=pts.filter(p=>p['สถานะ']==='จำหน่ายแล้ว'&&!dcMatch(p['เหตุผลจำหน่าย'],'carryover')).length;
+  const carryIn=pts.filter(p=>p['การรับ']==='ยกมา').length;
+  const total=pts.length; // ยอดผู้ป่วยทั้งหมด รวมยกมา
+  const totalAdmit=pts.filter(p=>p['การรับ']!=='ยกมา').length; // ยอดรับ ไม่รวมยกมา
   const deadCount=pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'dead')).length,referCount=pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'refer')).length;
   const moveWell=pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'movewell')).length,moveBed=pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'movebed')).length;
   const palliativeDC=pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'palliative')).length,noConsent=pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'noconsent')).length;
   const ventCount=pts.filter(p=>p['Ventilator (Name)']).length,alineCount=pts.filter(p=>p['A-Line (Start)']).length,clineCount=pts.filter(p=>p['C-Line (Start)']).length,fcCount=pts.filter(p=>p['F/C (Start)']).length,icdCount=pts.filter(p=>p['ICD (Start)']).length;
-  const newPts=pts.filter(p=>p['การรับ']!=='ยกมา'); // ไม่นับผู้ป่วยค้างเดือน
-  const vapCount=newPts.filter(p=>p['VAP']==='ใช่').length,cautiCount=newPts.filter(p=>p['CAUTI']==='ใช่').length,clabsiCount=newPts.filter(p=>p['CLABSI']==='ใช่').length,ssiCount=newPts.filter(p=>p['SSI']==='ใช่').length,mdrCount=newPts.filter(p=>p['MDR']==='ใช่').length;
-  const unplannedCount=pts.filter(p=>p['Unplanned ICU']==='ใช่').length,readmitCount=pts.filter(p=>p['Re-admit ICU']==='ใช่').length;
-  const cprCount=pts.filter(p=>p['CPR']==='Yes').length,surgCount=pts.filter(p=>p['ผ่าตัด']==='Yes').length,pallCount=pts.filter(p=>p['Palliative']==='Yes').length;
+  const admitted=pts.filter(p=>p['สถานะ']!=='จำหน่ายแล้ว').length,discharged=pts.filter(p=>p['สถานะ']==='จำหน่ายแล้ว'&&!dcMatch(p['เหตุผลจำหน่าย'],'carryover')).length;
+  const newPts=pts.filter(p=>p['การรับ']!=='ยกมา'); // ไม่นับผู้ป่วยค้างเดือน,cautiCount=newPts.filter(p=>p['CAUTI']==='ใช่').length,clabsiCount=newPts.filter(p=>p['CLABSI']==='ใช่').length,ssiCount=newPts.filter(p=>p['SSI']==='ใช่').length,mdrCount=newPts.filter(p=>p['MDR']==='ใช่').length;
+  const vapCount=newPts.filter(p=>p['VAP']==='ใช่').length,readmitCount=pts.filter(p=>p['Re-admit ICU']==='ใช่').length;
+  const unplannedCount=pts.filter(p=>p['Unplanned ICU']==='ใช่').length,surgCount=pts.filter(p=>p['ผ่าตัด']==='Yes').length,pallCount=pts.filter(p=>p['Palliative']==='Yes').length;
   const typeCount={};
   pts.forEach(p=>{
     const t=normalizePatType(p['ประเภทผู้ป่วย']||'');
@@ -5486,7 +5488,7 @@ function getStats(pts){
   const occupancyRate=totalDays?(totalDays/(TOTAL_BEDS*30)*100).toFixed(1):0;
   const mortalityRate=discharged?(deadCount/discharged*100).toFixed(1):0;
   const turnoverRate=TOTAL_BEDS?(totalDays/TOTAL_BEDS).toFixed(2):0;
-  return{total,admitted,discharged,deadCount,referCount,moveWell,moveBed,palliativeDC,noConsent,ventCount,alineCount,clineCount,fcCount,icdCount,vapCount,cautiCount,clabsiCount,ssiCount,mdrCount,unplannedCount,readmitCount,cprCount,surgCount,pallCount,typeCount,top5Diag,top5Dead,top5Refer,top5ReferHosp,avgDaysPerPt,occupancyRate,mortalityRate,totalDays,turnoverRate};
+  return{total,totalAdmit,carryIn,admitted,discharged,deadCount,referCount,moveWell,moveBed,palliativeDC,noConsent,ventCount,alineCount,clineCount,fcCount,icdCount,vapCount,cautiCount,clabsiCount,ssiCount,mdrCount,unplannedCount,readmitCount,cprCount,surgCount,pallCount,typeCount,top5Diag,top5Dead,top5Refer,top5ReferHosp,avgDaysPerPt,occupancyRate,mortalityRate,totalDays,turnoverRate};
 }
 
 // ============================================================
@@ -6377,11 +6379,12 @@ async function loadDiseaseIndicator(){
     const patType=String(p['ประเภทผู้ป่วย']||'').toLowerCase();
     const dxMatch=disease.labels.some(l=>{
       const label=l.toLowerCase().trim();
-      if(label.length<=4){
-        const words=dx.split(/[\s,\/\-\(\)]+/);
-        return words.some(w=>w===label);
-      }
-      return dx.includes(label);
+      // ใช้ word boundary เสมอ
+      const words=dx.split(/[\s,\/\-\(\)\+\.]+/);
+      if(words.some(w=>w===label)) return true;
+      // ถ้าคำยาวกว่า 4 ตัว ให้ใช้ contains เพิ่มเติม แต่ต้องไม่ใช่ substring ของคำอื่น
+      if(label.length>4) return dx.includes(label);
+      return false;
     });
     if(!dxMatch) return false;
     if(disease.patType && disease.patType.length>0){
@@ -6672,13 +6675,13 @@ async function loadMonthly(){
       <th style="padding:9px 12px;text-align:center;width:80px">จำนวน</th>
     </tr></thead>
     <tbody>
-      ${row('ยอดผู้ป่วย (คน)',totalAdmit,true)}
+      ${row('ยอดผู้ป่วย (คน)',s.total,true)}
       ${row('ยกมา',carryIn)}
       ${row('ค้างเดือน',carryOut)}
       ${row('จน.วันนอน รพ. (วัน)',s.totalDays)}
       ${row('รับใหม่',newAdmit)}
       ${row('รับย้าย',transferIn)}
-      ${row('รวมยอดรับผู้ป่วย',totalAdmit,true)}
+      ${row('รวมยอดรับผู้ป่วย',newAdmit+transferIn,true)}
       ${divider}
       ${row('ทุเลาย้าย',s.moveWell)}
       ${row('ต้องการเตียงย้าย',s.moveBed)}

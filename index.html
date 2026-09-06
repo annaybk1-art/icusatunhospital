@@ -4118,12 +4118,6 @@ function buildForm(p){
       </div></div>
       <div class="fsec"><div class="fsec-title">Dx <span class="req">*</span> <span style="font-size:10px;color:var(--gray400);font-weight:400">เลือกได้หลายตัว (อัปเดตได้ทุกเวร)</span></div>
         ${multiSel('Diagnosis แรกรับ',o('diagnosis'),p['Diagnosis แรกรับ'],'diagnosis')}
-        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <span style="font-size:11px;font-weight:600;color:var(--gray600)">ประเภทพิเศษ:</span>
-          ${['Stroke','TBI','Trauma','ไม่มี'].map(v=>`<label style="display:flex;align-items:center;gap:4px;font-size:11.5px;cursor:pointer">
-            <input type="radio" name="dxSpecialType" value="${v}" ${(p['dxSpecialType']||'')=== v?'checked':''}> ${v}
-          </label>`).join('')}
-        </div>
       </div>
       <div class="fsec"><div class="fsec-title">โรคประจำตัว (U/D) <span class="req">*</span> <span style="font-size:10px;color:var(--gray400);font-weight:400">เลือกได้หลายตัว (ถ้าไม่มีให้เลือก "ไม่มี")</span></div>
         ${multiSel('U/D',o('udOptions'),p['U/D'],'udOptions')}
@@ -6272,8 +6266,19 @@ const DISEASE_LIST=[
   {group:'🧠 โรคระบบประสาท',items:[
     {key:'Hemorrhagic stroke',labels:['Hemorrhagic stroke','ICH'],patType:['neuro','surg']},
     {key:'Ischemic stroke',labels:['Ischemic stroke','CVA'],patType:['med']},
-    {key:'Total Stroke',labels:['Hemorrhagic stroke','ICH','Ischemic stroke','CVA','stroke'],isTotal:true},
-    {key:'Head injury/TBI',labels:['Head injury','TBI','Traumatic brain']},
+    {key:'SAH (Spontaneous)',labels:['Subarachnoid hemorrhage','SAH'],patType:['neuro','surg']},
+    {key:'TIA',labels:['TIA','Transient ischemic']},
+    {key:'Total Stroke',labels:['Hemorrhagic stroke','ICH','Ischemic stroke','CVA','SAH','TIA','stroke'],isTotal:true},
+    {key:'MHI (Mild)',labels:['MHI','Mild head injury']},
+    {key:'Moderate HI',labels:['Moderate head injury','MoHI','Moderate HI']},
+    {key:'SHI (Severe)',labels:['SHI','Severe head injury']},
+    {key:'EDH',labels:['EDH','Epidural hematoma']},
+    {key:'SDH',labels:['SDH','Subdural hematoma']},
+    {key:'ICH (Trauma)',labels:['Traumatic ICH','tICH']},
+    {key:'DAI',labels:['DAI','Diffuse axonal']},
+    {key:'Skull fracture',labels:['Skull fracture']},
+    {key:'Traumatic SAH',labels:['Traumatic SAH','tSAH']},
+    {key:'Total TBI',labels:['MHI','Mild head injury','Moderate head injury','MoHI','Moderate HI','SHI','Severe head injury','EDH','SDH','Traumatic ICH','tICH','DAI','Skull fracture','Traumatic SAH','TBI','Head injury'],isTotal:true},
   ]},
   {group:'🩸 โรคไต',items:[
     {key:'CKD',labels:['CKD','Chronic kidney']},
@@ -6327,7 +6332,6 @@ async function loadDiseaseIndicator(){
       return dx.includes(label);
     });
     if(!dxMatch) return false;
-    // ถ้ามี patType filter ให้ตรวจด้วย
     if(disease.patType && disease.patType.length>0){
       return disease.patType.some(t=>patType.includes(t));
     }

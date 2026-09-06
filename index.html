@@ -5445,13 +5445,18 @@ function getStats(pts){
     {name:'Pneumonia',labels:['pneumonia','cap','hap','vap']},
     {name:'ACS',labels:['stemi','nstemi','unstable angina','acs']},
     {name:'Heart Failure',labels:['adhf','chf','heart failure']},
-    {name:'Stroke',labels:['hemorrhagic stroke','ischemic stroke','cva','ich']},
-    {name:'Trauma',labels:['head injury','tbi','blunt abd','chest trauma','multiple fx']},
+    {name:'Stroke',labels:['hemorrhagic stroke','ischemic stroke','cva','tia','sah']},
+    {name:'TBI',labels:['head injury','tbi','mhi','shi','edh','sdh','dai','skull fracture']},
+    {name:'Trauma',labels:['blunt abd','chest trauma','multiple fx','spinal injury','pelvic fracture','polytrauma']},
   ];
   const groupDx=(dxRaw)=>{
     const dx=String(dxRaw||'').toLowerCase();
+    const words=dx.split(/[\s,\/\-\(\)\+\.]+/);
     for(const g of DX_GROUPS){
-      if(g.labels.some(l=>dx.includes(l))) return g.name;
+      if(g.labels.some(l=>{
+        if(l==='stemi') return words.includes('stemi') && !words.includes('nstemi');
+        return words.includes(l) || (l.length>5 && dx.includes(l));
+      })) return g.name;
     }
     return dxRaw;
   };

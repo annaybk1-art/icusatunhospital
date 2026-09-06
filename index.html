@@ -1032,7 +1032,14 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
           <button class="btn btn-primary btn-sm" onclick="loadDiseaseIndicator()">แสดง</button>
         </div>
       </div>
-      <div id="diseaseContent" style="padding:8px 0"></div>
+      <div id="diseaseContent" style="padding:8px 0">
+        <div style="margin-bottom:10px">
+          <input type="text" id="diseaseSearch" placeholder="🔍 ค้นหาโรค เช่น TBI, Stroke, Sepsis..." 
+            oninput="filterDiseaseContent(this.value)"
+            style="width:100%;padding:8px 12px;border:1.5px solid var(--g200);border-radius:8px;font-size:13px">
+        </div>
+        <div id="diseaseList"></div>
+      </div>
     </div>
 
     <div class="sec" id="sec-kpi">
@@ -3897,6 +3904,23 @@ function applyFilter(){
     if(st==='female'&&(name.startsWith('นาย')||name.startsWith('เด็กชาย')||name.startsWith('ด.ช.'))) return false;
     if(!q) return true;
     const field=document.getElementById('srchField')?.value||'all';
+
+    // ค้นหาตามกลุ่มโรค
+    const groupSearch={
+      'tbi':['MHI','SHI','Moderate HI','EDH','SDH','DAI','Skull fracture','Traumatic SAH','Head injury','TBI'],
+      'stroke':['Hemorrhagic stroke','Ischemic stroke','SAH','TIA','CVA','ICH','Stroke'],
+      'sepsis':['Sepsis','Septic shock'],
+      'pneumonia':['Pneumonia','CAP','HAP','VAP'],
+      'จิตเวช':['Schizophrenia','Bipolar','Psychosis','MDD','Depression','Anxiety','PTSD','OCD','จิตเวช','Psychiatric'],
+      'trauma':['Chest trauma','Blunt Abd','Spinal injury','Pelvic fracture','Multiple Fx','Polytrauma'],
+      'acs':['STEMI','NSTEMI','Unstable Angina','ACS'],
+      'hf':['ADHF','CHF','Heart failure'],
+    };
+    const grpMatch=Object.entries(groupSearch).find(([k])=>k===q||q===k);
+    if(grpMatch){
+      const dx=String(p['Diagnosis แรกรับ']||'').toLowerCase();
+      return grpMatch[1].some(l=>dx.includes(l.toLowerCase()));
+    }
     const matchWord=(str,q)=>{
       // ถ้า q สั้น ≤4 ตัว ใช้ exact word match
       if(q.length<=4){
@@ -6313,7 +6337,16 @@ const DISEASE_LIST=[
     {key:'PIH',labels:['PIH','Pregnancy-induced hypertension']},
     {key:'PPH',labels:['PPH','Postpartum hemorrhage']},
     {key:'CA',labels:['Cancer','Carcinoma','CA ']},
-    {key:'จิตเวช',labels:['จิตเวช','Psychiatric','Schizophrenia','Bipolar','Psychosis','MDD','Depression','Anxiety','Schizoaffective','Mental disorder','OCD','PTSD']},
+  ]},
+  {group:'🧠 จิตเวช',items:[
+    {key:'Schizophrenia',labels:['Schizophrenia','Schizoaffective']},
+    {key:'Bipolar disorder',labels:['Bipolar','Bipolar disorder']},
+    {key:'MDD',labels:['MDD','Major depressive','Depression']},
+    {key:'Acute psychosis',labels:['Acute psychosis','Psychosis']},
+    {key:'Anxiety disorder',labels:['Anxiety','Anxiety disorder']},
+    {key:'PTSD',labels:['PTSD','Post-traumatic']},
+    {key:'OCD',labels:['OCD','Obsessive']},
+    {key:'จิตเวช (รวม)',labels:['จิตเวช','Psychiatric','Schizophrenia','Bipolar','Psychosis','MDD','Depression','Anxiety','Schizoaffective','Mental disorder','OCD','PTSD'],isTotal:true},
   ]},
 ];
 

@@ -6379,10 +6379,13 @@ async function loadDiseaseIndicator(){
     const patType=String(p['ประเภทผู้ป่วย']||'').toLowerCase();
     const dxMatch=disease.labels.some(l=>{
       const label=l.toLowerCase().trim();
-      // ใช้ word boundary เสมอ
       const words=dx.split(/[\s,\/\-\(\)\+\.]+/);
+      // ต้องเป็น word เดียวกันเป๊ะๆ
       if(words.some(w=>w===label)) return true;
-      // ถ้าคำยาวกว่า 4 ตัว ให้ใช้ contains เพิ่มเติม แต่ต้องไม่ใช่ substring ของคำอื่น
+      // กรณีพิเศษ STEMI ต้องไม่ใช่ NSTEMI
+      if(label==='stemi'){
+        return words.some(w=>w==='stemi' && !dx.includes('nstemi'));
+      }
       if(label.length>4) return dx.includes(label);
       return false;
     });

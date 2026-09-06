@@ -6252,6 +6252,7 @@ const DISEASE_LIST=[
     {key:'Dengue hemorrhagic fever',labels:['Dengue','DHF']},
     {key:'Leptospirosis',labels:['Leptospirosis']},
     {key:'TB',labels:['TB','Tuberculosis']},
+    {key:'HIV/UP',labels:['HIV','UP','Unprotected']},
   ]},
   {group:'🫁 โรคระบบทางเดินหายใจ',items:[
     {key:'Pneumonia',labels:['Pneumonia']},
@@ -6285,18 +6286,34 @@ const DISEASE_LIST=[
     {key:'ESRD',labels:['ESRD','End-stage renal']},
     {key:'AKI',labels:['AKI','Acute kidney']},
   ]},
-  {group:'🏥 อื่นๆ',items:[
-    {key:'Blunt Abd. Trauma',labels:['Blunt Abd','Abdominal trauma']},
-    {key:'Chest Trauma',labels:['Chest Trauma','Chest injury']},
+  {group:'🚑 Trauma',items:[
+    {key:'Chest Trauma',labels:['Chest trauma','Chest injury']},
+    {key:'Blunt Abd. Trauma',labels:['Blunt Abd','Abdominal trauma','Blunt abdominal']},
+    {key:'Spinal injury',labels:['Spinal injury','Spinal cord','SCI']},
+    {key:'Pelvic fracture',labels:['Pelvic fracture','Pelvic injury']},
     {key:'Multiple Fx',labels:['Multiple Fx','Multiple fracture']},
-    {key:'Hypovolumic shock',labels:['Hypovolumic','Hypovolemic shock']},
-    {key:'PU perforate',labels:['PU perforate','Peptic ulcer perforation']},
+    {key:'Polytrauma',labels:['Polytrauma','Multiple injuries','Multiple trauma']},
+    {key:'Total Trauma',labels:['Chest trauma','Chest injury','Blunt Abd','Abdominal trauma','Spinal injury','Spinal cord','SCI','Pelvic fracture','Multiple Fx','Multiple fracture','Polytrauma','Multiple injuries','Multiple trauma'],isTotal:true},
+  ]},
+  {group:'🧪 ต่อมไร้ท่อ & เมตาบอลิก',items:[
     {key:'DKA',labels:['DKA','Diabetic ketoacidosis']},
+    {key:'HHS',labels:['HHS','Hyperosmolar']},
+    {key:'Thyroid storm',labels:['Thyroid storm','Thyrotoxic crisis']},
+    {key:'Adrenal crisis',labels:['Adrenal crisis','Addisonian crisis']},
+  ]},
+  {group:'🫀 GI',items:[
+    {key:'Upper GI bleeding',labels:['Upper GI bleeding','UGIB','UGI bleeding']},
+    {key:'Lower GI bleeding',labels:['Lower GI bleeding','LGIB','LGI bleeding']},
+    {key:'PU/DU perforate',labels:['PU perforate','DU perforate','Peptic ulcer perforation','Duodenal ulcer']},
+    {key:'Bowel obstruction',labels:['Bowel obstruction','Intestinal obstruction','SBO']},
+    {key:'Mesenteric ischemia',labels:['Mesenteric ischemia','Mesenteric infarction']},
+  ]},
+  {group:'🏥 อื่นๆ',items:[
+    {key:'Hypovolumic shock',labels:['Hypovolumic','Hypovolemic shock']},
     {key:'PIH',labels:['PIH','Pregnancy-induced hypertension']},
     {key:'PPH',labels:['PPH','Postpartum hemorrhage']},
     {key:'CA',labels:['Cancer','Carcinoma','CA ']},
-    {key:'จิตเวช',labels:['จิตเวช','Psychiatric']},
-    {key:'UP',labels:[' UP','Urinary perforation','Urosepsis']},
+    {key:'จิตเวช',labels:['จิตเวช','Psychiatric','Schizophrenia','Bipolar','Psychosis','MDD','Depression','Anxiety','Schizoaffective','Mental disorder','OCD','PTSD']},
   ]},
 ];
 

@@ -5433,8 +5433,9 @@ function getStats(pts){
   const palliativeDC=pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'palliative')).length,noConsent=pts.filter(p=>dcMatch(p['เหตุผลจำหน่าย'],'noconsent')).length;
   const ventCount=pts.filter(p=>p['Ventilator (Name)']).length,alineCount=pts.filter(p=>p['A-Line (Start)']).length,clineCount=pts.filter(p=>p['C-Line (Start)']).length,fcCount=pts.filter(p=>p['F/C (Start)']).length,icdCount=pts.filter(p=>p['ICD (Start)']).length;
   const admitted=pts.filter(p=>p['สถานะ']!=='จำหน่ายแล้ว').length,discharged=pts.filter(p=>p['สถานะ']==='จำหน่ายแล้ว'&&!dcMatch(p['เหตุผลจำหน่าย'],'carryover')).length;
-  const newPts=pts.filter(p=>p['การรับ']!=='ยกมา'); // ไม่นับผู้ป่วยค้างเดือน,cautiCount=newPts.filter(p=>p['CAUTI']==='ใช่').length,clabsiCount=newPts.filter(p=>p['CLABSI']==='ใช่').length,ssiCount=newPts.filter(p=>p['SSI']==='ใช่').length,mdrCount=newPts.filter(p=>p['MDR']==='ใช่').length;
-  const vapCount=newPts.filter(p=>p['VAP']==='ใช่').length,readmitCount=pts.filter(p=>p['Re-admit ICU']==='ใช่').length;
+  const newPts=pts.filter(p=>p['การรับ']!=='ยกมา'); // ไม่นับผู้ป่วยค้างเดือน
+  const vapCount=newPts.filter(p=>p['VAP']==='ใช่').length,cautiCount=newPts.filter(p=>p['CAUTI']==='ใช่').length,clabsiCount=newPts.filter(p=>p['CLABSI']==='ใช่').length,ssiCount=newPts.filter(p=>p['SSI']==='ใช่').length,mdrCount=newPts.filter(p=>p['MDR']==='ใช่').length;
+  const readmitCount=pts.filter(p=>p['Re-admit ICU']==='ใช่').length;
   const unplannedCount=pts.filter(p=>p['Unplanned ICU']==='ใช่').length,surgCount=pts.filter(p=>p['ผ่าตัด']==='Yes').length,pallCount=pts.filter(p=>p['Palliative']==='Yes').length;
   const typeCount={};
   pts.forEach(p=>{

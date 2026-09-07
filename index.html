@@ -945,11 +945,6 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
             <button onclick="top5Go(1)" style="background:none;border:none;cursor:pointer;color:var(--gray400);font-size:16px;padding:2px 6px">›</button>
           </div>
         </div>
-        <!-- Trend Chart -->
-        <div class="dash-card" data-ed-id="trend-card" style="display:flex;flex-direction:column">
-          <div class="dash-card-title" data-ed-id="trend-title" style="flex-shrink:0">📈 ยอดผู้ป่วยรายวัน (Census)</div>
-          <div class="chart-container" style="flex:1"><canvas id="trendChart"></canvas></div>
-        </div>
       </div><!-- end top-row -->
       <div class="kpi-grid" id="dashKpi" data-ed-id="dashKpi-section"></div>
       <div class="dash-grid">
@@ -5861,23 +5856,24 @@ function renderTrendChart(pts, selMonth, selYear){
   const y=selYear||parseInt(document.getElementById('dYear')?.value)||new Date().getFullYear();
   const daysInMonth=new Date(y,m,0).getDate();
 
+  // Pre-process admit/dc dates
+  const ptDates=pts.map(p=>{
+    const a=new Date(String(p['Admit (Date)']||'').trim());
+    const dc=new Date(String(p['DC (Date)']||p['D/C (Date)']||'').trim());
+    return {
+      admitT:isNaN(a)?Infinity:a.setHours(0,0,0,0),
+      dcT:isNaN(dc)?Infinity:dc.setHours(23,59,59,0),
+      active:p['สถานะ']==='กำลัง admit'
+    };
+  });
+
   for(let day=1;day<=daysInMonth;day++){
-    const d=new Date(y,m-1,day); d.setHours(23,59,59,0);
-    const dStart=new Date(y,m-1,day); dStart.setHours(0,0,0,0);
+    const dT=new Date(y,m-1,day,23,59,59,0).getTime();
     const label=`${day}`;
-    const count=pts.filter(p=>{
-      const admitStr=String(p['Admit (Date)']||'').trim();
-      if(!admitStr) return false;
-      const admitD=new Date(admitStr); admitD.setHours(0,0,0,0);
-      if(isNaN(admitD)||admitD>d) return false;
-      // ถ้ายัง admit อยู่ → นับ
-      if(p['สถานะ']==='กำลัง admit') return admitD<=d;
-      // ถ้า DC แล้ว → เช็ควันที่ DC
-      const dcStr=String(p['DC (Date)']||'').trim();
-      if(!dcStr) return admitD<=d;
-      const dcD=new Date(dcStr); dcD.setHours(0,0,0,0);
-      if(isNaN(dcD)) return admitD<=d;
-      return admitD<=d && dcD>=dStart;
+    const count=ptDates.filter(p=>{
+      if(p.admitT===Infinity||p.admitT>dT) return false;
+      if(p.active) return true;
+      return p.dcT>=new Date(y,m-1,day,0,0,0,0).getTime();
     }).length;
     labels.push(label);
     admitData.push(count);

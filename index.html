@@ -830,9 +830,9 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
             <thead><tr>
               <th>#</th><th>ลำดับปี</th><th>Admit</th><th>เวลา</th><th>เตียง</th><th>ชื่อ-สกุล</th><th>HN</th>
               <th>อายุ</th><th>U/D</th><th>Dx แรกรับ</th><th>แพทย์</th><th>ประเภท</th>
-              <th>D/C</th><th>วันนอน</th><th>เหตุผล DC</th><th>ผู้บันทึก D/C</th><th>Apache IV</th><th>Bedsore</th><th>Falling</th><th>สถานะ</th><th>จัดการ</th>
+              <th>D/C</th><th>วันนอน</th><th>เหตุผล DC</th><th>ผู้บันทึก D/C</th><th>Apache IV</th><th>Bedsore</th><th>Falling</th><th>CPR</th><th>สถานะ</th><th>จัดการ</th>
             </tr></thead>
-            <tbody id="ptTbl"><tr><td colspan="17" class="loading-msg">กำลังโหลด...</td></tr></tbody>
+            <tbody id="ptTbl"><tr><td colspan="18" class="loading-msg">กำลังโหลด...</td></tr></tbody>
           </table>
         </div>
         <div class="pager">
@@ -3921,6 +3921,11 @@ function applyFilter(){
       const dx=String(p['Diagnosis แรกรับ']||'').toLowerCase();
       return grpMatch[1].some(l=>dx.includes(l.toLowerCase()));
     }
+    // ค้นหาด่วน: พิมพ์ "cpr" หรือ "bedsore/กดทับ" เจอผู้ป่วยที่มีค่านั้นทันที (ไม่ต้องเลือกช่องค้นหา)
+    if(q==='cpr') return p['CPR']==='Yes';
+    if(q==='bedsore'||q==='กดทับ'){
+      try{return (JSON.parse(p['Pressure Injury']||'[]')||[]).length>0;}catch(e){return false;}
+    }
     const matchWord=(str,q)=>{
       // ถ้า q สั้น ≤4 ตัว ใช้ exact word match
       if(q.length<=4){
@@ -3964,7 +3969,7 @@ function getRowClass(p){
 }
 function renderTbl(){
   const s=(_curPg-1)*pgSz,e=Math.min(s+pgSz,_filtPts.length),rows=_filtPts.slice(s,e);
-  if(!rows.length){document.getElementById('ptTbl').innerHTML=`<tr><td colspan="18" class="loading-msg">ไม่พบข้อมูล</td></tr>`;document.getElementById('pgInfo').textContent='ไม่พบข้อมูล';return;}
+  if(!rows.length){document.getElementById('ptTbl').innerHTML=`<tr><td colspan="19" class="loading-msg">ไม่พบข้อมูล</td></tr>`;document.getElementById('pgInfo').textContent='ไม่พบข้อมูล';return;}
   const m=parseInt(document.getElementById('fMonth').value),yr=parseInt(document.getElementById('fYear').value);
   
   // คำนวณลำดับปีงบ (ต.ค.-ก.ย.) เริ่ม1ใหม่ทุกต.ค.
@@ -4013,6 +4018,7 @@ function renderTbl(){
       <td style="text-align:center;font-weight:700;color:#c62828">${p['Apache IV Score']||'-'}</td>
       <td style="text-align:center;font-size:10px">${(()=>{try{const ev=JSON.parse(p['Pressure Injury']||'[]');return ev.length?ev.map(e=>e.grade||'').join(', '):'-';}catch(e){return '-';}})()}</td>
       <td>${fl?`<span class="${flC}">${fl}</span>`:'-'}</td>
+      <td style="text-align:center">${p['CPR']==='Yes'?'<span style="color:#c62828;font-weight:700">CPR</span>':'-'}</td>
       <td><span class="badge ${st==='จำหน่ายแล้ว'?'b-dc':'b-admit'}">${st}</span></td>
       <td><span style="display:flex;gap:2px">
         <button class="btn btn-outline btn-sm" onclick="openEdit('${esc(pid)}',${m},${yr})">✏️</button>

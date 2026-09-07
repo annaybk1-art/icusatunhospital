@@ -6583,7 +6583,8 @@ async function loadKPI(){
     }
   }catch(e){toast(e.message,true);hideLoad();return;}
   hideLoad();
-  if(!m||!y||!pts){return;}
+  if(!m||!y||!pts){toast('m='+m+' y='+y+' pts='+pts.length,true);return;}
+  toast('โหลดได้ '+pts.length+' ราย');
   const s=getStats(pts);
   const daysInMonth=new Date(y,m,0).getDate();
   const totalDC=s.discharged||1;

@@ -5436,6 +5436,7 @@ function getStats(pts){
   const vapCount=newPts.filter(p=>p['VAP']==='ใช่').length,cautiCount=newPts.filter(p=>p['CAUTI']==='ใช่').length,clabsiCount=newPts.filter(p=>p['CLABSI']==='ใช่').length,ssiCount=newPts.filter(p=>p['SSI']==='ใช่').length,mdrCount=newPts.filter(p=>p['MDR']==='ใช่').length;
   const readmitCount=pts.filter(p=>p['Re-admit ICU']==='ใช่').length;
   const unplannedCount=pts.filter(p=>p['Unplanned ICU']==='ใช่').length,surgCount=pts.filter(p=>p['ผ่าตัด']==='Yes').length,pallCount=pts.filter(p=>p['Palliative']==='Yes').length;
+  const cprCount=pts.filter(p=>p['CPR']==='Yes').length;
   const typeCount={};
   pts.forEach(p=>{
     const t=normalizePatType(p['ประเภทผู้ป่วย']||'');

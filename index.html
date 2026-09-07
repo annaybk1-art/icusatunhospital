@@ -6073,7 +6073,7 @@ function buildSumTable(s,label,pts=[]){
     ${cell('Re-admit',s.readmitCount+' ราย')}
     ${cell('CPR',s.cprCount+' ราย')}
     ${cell('ผ่าตัด',s.surgCount+' ราย')}
-    ${cell('🩹 Bedsore',pts.filter(p=>{try{return JSON.parse(p['Pressure Injury']||'[]').length>0;}catch(e){return false;}}).length+' ราย')}`;
+    ${cell('🩹 Bedsore',pts.filter(p=>p['Pressure Injury']&&p['Pressure Injury']!=='[]'&&p['Pressure Injury']!=='').length+' ราย')}`;
 
   const col2=`
     ${head('🚪 เหตุผลการจำหน่าย')}

@@ -6581,7 +6581,9 @@ async function loadKPI(){
       pts=await fetchMonthPts(m,y);
       periodLabel=`${MONTHS_TH[m-1]} ${y+543}`;
     }
-  }catch(e){toast(e.message,true);}finally{hideLoad();}
+  }catch(e){toast(e.message,true);hideLoad();return;}
+  hideLoad();
+  if(!m||!y||!pts){return;}
   const s=getStats(pts);
   const daysInMonth=new Date(y,m,0).getDate();
   const totalDC=s.discharged||1;

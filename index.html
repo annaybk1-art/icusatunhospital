@@ -830,7 +830,7 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
             <thead><tr>
               <th>#</th><th>ลำดับปี</th><th>Admit</th><th>เวลา</th><th>เตียง</th><th>ชื่อ-สกุล</th><th>HN</th>
               <th>อายุ</th><th>U/D</th><th>Dx แรกรับ</th><th>แพทย์</th><th>ประเภท</th>
-              <th>D/C</th><th>วันนอน</th><th>เหตุผล DC</th><th>ผู้บันทึก D/C</th><th>Apache IV</th><th>CPR</th><th>Bedsore</th><th>Falling</th><th>สถานะ</th><th>จัดการ</th>
+              <th>D/C</th><th>วันนอน</th><th>เหตุผล DC</th><th>ผู้บันทึก D/C</th><th>Apache IV</th><th>Bedsore</th><th>Falling</th><th>สถานะ</th><th>จัดการ</th>
             </tr></thead>
             <tbody id="ptTbl"><tr><td colspan="17" class="loading-msg">กำลังโหลด...</td></tr></tbody>
           </table>
@@ -4011,7 +4011,6 @@ function renderTbl(){
       <td>${dc?`<span class="${dcC}" style="font-size:10.5px">${dc}</span>`:'-'}</td>
       <td style="font-size:10.5px;white-space:nowrap">${p['ผู้บันทึก D/C']||'-'}</td>
       <td style="text-align:center;font-weight:700;color:#c62828">${p['Apache IV Score']||'-'}</td>
-      <td style="text-align:center">${p['CPR']==='Yes'?'<span style="color:#c62828;font-weight:700">✓</span>':'-'}</td>
       <td style="text-align:center;font-size:10px">${(()=>{try{const ev=JSON.parse(p['Pressure Injury']||'[]');return ev.length?ev.map(e=>e.grade||'').join(', '):'-';}catch(e){return '-';}})()}</td>
       <td>${fl?`<span class="${flC}">${fl}</span>`:'-'}</td>
       <td><span class="badge ${st==='จำหน่ายแล้ว'?'b-dc':'b-admit'}">${st}</span></td>
@@ -6069,8 +6068,7 @@ function buildSumTable(s,label,pts=[]){
     ${cell('Unplanned',s.unplannedCount+' ราย')}
     ${cell('Re-admit',s.readmitCount+' ราย')}
     ${cell('CPR',s.cprCount+' ราย')}
-    ${cell('ผ่าตัด',s.surgCount+' ราย')}
-    ${cell('🩹 Bedsore',pts.filter(p=>p['Pressure Injury']&&p['Pressure Injury']!=='[]'&&p['Pressure Injury']!=='').length+' ราย')}`;
+    ${cell('ผ่าตัด',s.surgCount+' ราย')}`;
 
   const col2=`
     ${head('🚪 เหตุผลการจำหน่าย')}

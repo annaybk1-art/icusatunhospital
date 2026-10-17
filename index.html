@@ -427,6 +427,14 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
   .fgrid{grid-template-columns:1fr}
   .stat-val{font-size:20px}
 }
+
+/* ── DATE UX: ช่องวันที่แสดงเป็น วว/ดด/ปปปป ── */
+.dmy-wrap{position:relative;display:block}
+.dmy-box{position:relative;display:block}
+.dmy-box .dmy-text{width:100%!important;box-sizing:border-box!important;padding-right:34px!important}
+.dmy-btn{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:none;background:transparent;cursor:pointer;font-size:15px;line-height:1;padding:4px}
+.dmy-hidden{position:absolute!important;right:0;top:0;width:1px!important;height:1px!important;min-height:0!important;opacity:0;pointer-events:none;border:0!important;padding:0!important;margin:0!important}
+.dmy-text.dmy-bad{border-color:#e53935!important;background:#fff1f1!important}
 </style>
 </head>
 <body>
@@ -1874,7 +1882,7 @@ function hideLoad(){document.getElementById('loadOverlay').classList.remove('ope
 // ทุกครั้งที่ปล่อยเวอร์ชันใหม่: แก้ APP_VERSION ในไฟล์นี้ และ APP_LATEST_VERSION ใน Code.gs ให้เป็นเลขเดียวกัน
 // รูปแบบ 'YYYY-MM-DD.NN' (เทียบเป็นข้อความได้ — เวอร์ชันใหม่กว่าจะมีค่ามากกว่า)
 // ============================================================
-const APP_VERSION='2026-10-17.02';
+const APP_VERSION='2026-10-17.03';
 let _updateDismissedAt=0,_lastUpdateCheck=0;
 
 async function checkAppUpdate(force=false){
@@ -1916,6 +1924,149 @@ showAppVersion();
 window.addEventListener('load',()=>{showAppVersion();setTimeout(()=>checkAppUpdate(true),4000);});
 setInterval(()=>checkAppUpdate(true),10*60*1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkAppUpdate();});
+
+// ============================================================
+// DATE UX — (1) แสดงวันที่ทุกช่องเป็น วัน/เดือน/ปี  (2) ถามยืนยันเมื่อเลือกวันที่/เดือน/ปีที่ไม่ใช่ปัจจุบัน
+// ค่าที่เก็บในชีตยังเป็นรูปแบบเดิม (yyyy-mm-dd, ค.ศ.) — เปลี่ยนเฉพาะการแสดงผลและการพิมพ์
+// ============================================================
+const DATE_YEAR_BE=true;                       // true = แสดงปี พ.ศ. (เหมือนตารางรายชื่อ) | false = แสดงปี ค.ศ.
+const DATE_CONFIRM_SKIP=new Set(['วันเกิด']);  // ช่องวันที่ที่ไม่ต้องถามยืนยัน (วันเกิดไม่มีทางเป็นวันนี้)
+function DATE_LOCALE(){return DATE_YEAR_BE?'th-TH':'en-GB';}
+function _dp2(n){return String(n).padStart(2,'0');}
+function _dyShow(y){return DATE_YEAR_BE?y+543:y;}
+function toDMY(iso){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso||'');return m?m[3]+'/'+m[2]+'/'+_dyShow(+m[1]):'';}
+function toDMYT(iso){const m=/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(iso||'');return m?m[3]+'/'+m[2]+'/'+_dyShow(+m[1])+' '+m[4]+':'+m[5]:toDMY(iso);}
+function _dmyYear(d,mo,y){if(y>=2400)y-=543;const dt=new Date(y,mo-1,d);return(dt.getFullYear()===y&&dt.getMonth()===mo-1&&dt.getDate()===d)?y:0;}
+// รับ พ.ศ./ค.ศ. อัตโนมัติ (ปี >= 2400 ถือเป็น พ.ศ.) คืนค่า 'yyyy-mm-dd' (ค.ศ.) หรือ '' ถ้าไม่ถูกต้อง
+function parseDMY(t){const m=/^\s*(\d{1,2})\s*[\/.\-]\s*(\d{1,2})\s*[\/.\-]\s*(\d{4})\s*$/.exec(t||'');if(!m)return '';const y=_dmyYear(+m[1],+m[2],+m[3]);return y?y+'-'+_dp2(+m[2])+'-'+_dp2(+m[1]):'';}
+function parseDMYT(t){const m=/^\s*(\d{1,2})\s*[\/.\-]\s*(\d{1,2})\s*[\/.\-]\s*(\d{4})\s+(\d{1,2}):(\d{2})\s*$/.exec(t||'');if(!m)return '';const y=_dmyYear(+m[1],+m[2],+m[3]);if(!y||+m[4]>23||+m[5]>59)return '';return y+'-'+_dp2(+m[2])+'-'+_dp2(+m[1])+'T'+_dp2(+m[4])+':'+m[5];}
+
+// แทนที่ <input type=date|datetime-local> ด้วยช่องพิมพ์ วว/ดด/ปปปป + ปุ่มปฏิทิน
+// (ตัว input เดิมยังอยู่ ซ่อนไว้ และยังเป็นตัวเก็บค่า yyyy-mm-dd ให้โค้ดเดิมทุกส่วนทำงานได้เหมือนเดิม)
+function enhanceDateInput(inp){
+  if(inp.dataset.dmy) return;
+  inp.dataset.dmy='1';
+  const withTime=inp.type==='datetime-local';
+  const desc=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  const wrap=document.createElement('span');wrap.className='dmy-wrap';
+  ['flex','width','minWidth','maxWidth','margin'].forEach(k=>{if(inp.style[k]){wrap.style[k]=inp.style[k];inp.style[k]='';}});
+  const txt=document.createElement('input');
+  txt.type='text';txt.className='dmy-text '+(inp.className||'');
+  txt.setAttribute('inputmode','numeric');txt.setAttribute('autocomplete','off');
+  txt.placeholder=withTime?'วว/ดด/ปปปป ชช:นน':'วว/ดด/ปปปป';
+  txt.maxLength=withTime?16:10;
+  txt.style.cssText=inp.style.cssText;
+  const box=document.createElement('span');box.className='dmy-box';
+  const btn=document.createElement('button');btn.type='button';btn.className='dmy-btn';btn.textContent='📅';btn.title='เลือกจากปฏิทิน';btn.tabIndex=-1;
+  box.append(txt,btn);
+  inp.parentNode.insertBefore(wrap,inp);
+  wrap.append(box,inp);
+  inp.classList.add('dmy-hidden');inp.tabIndex=-1;
+  inp._dmyTxt=txt;
+
+  const sync=()=>{const v=desc.get.call(inp);txt.value=v?(withTime?toDMYT(v):toDMY(v)):'';txt.classList.remove('dmy-bad');};
+  inp._dmySync=sync;
+  // ถ้าโค้ดส่วนอื่นตั้ง .value ตรงๆ ให้ช่องที่มองเห็นอัปเดตตาม (และถือเป็นค่าที่ยอมรับแล้ว)
+  Object.defineProperty(inp,'value',{configurable:true,get(){return desc.get.call(inp);},set(v){desc.set.call(inp,v);inp.dataset.prev=desc.get.call(inp);sync();}});
+  inp.dataset.prev=desc.get.call(inp);
+  sync();
+
+  const parse=t=>withTime?parseDMYT(t):parseDMY(t);
+  const commit=()=>{
+    const t=txt.value.trim();
+    if(!t){ if(desc.get.call(inp)){desc.set.call(inp,'');inp.dispatchEvent(new Event('change',{bubbles:true}));} sync(); return true; }
+    const iso=parse(t);
+    if(!iso){txt.classList.add('dmy-bad');return false;}
+    if(desc.get.call(inp)!==iso){desc.set.call(inp,iso);inp.dispatchEvent(new Event('change',{bubbles:true}));}
+    sync();return true;
+  };
+  txt.addEventListener('input',()=>{
+    const max=withTime?12:8;
+    const d=txt.value.replace(/\D/g,'').slice(0,max);
+    let out=d.slice(0,2);
+    if(d.length>2)out+='/'+d.slice(2,4);
+    if(d.length>4)out+='/'+d.slice(4,8);
+    if(withTime&&d.length>8)out+=' '+d.slice(8,10)+(d.length>10?':'+d.slice(10,12):'');
+    txt.value=out;
+    if(d.length===max)commit();else txt.classList.remove('dmy-bad');
+  });
+  txt.addEventListener('paste',e=>{
+    const t=((e.clipboardData||window.clipboardData).getData('text')||'').trim();
+    if(/^\d{4}-\d{2}-\d{2}/.test(t)){e.preventDefault();txt.value=withTime?toDMYT(t.replace(' ','T')):toDMY(t);commit();}
+  });
+  txt.addEventListener('blur',()=>{if(!commit())sync();});   // พิมพ์ไม่ครบ/ไม่ถูกต้อง → คืนค่าเดิม
+  txt.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();commit();}});
+  btn.addEventListener('click',e=>{e.preventDefault();try{inp.showPicker();}catch(_){inp.focus();inp.click();}});
+  inp.addEventListener('change',sync);
+}
+function enhanceDateInputsIn(root){
+  if(!root||!root.querySelectorAll) return;
+  if(root.matches&&root.matches('input[type="date"],input[type="datetime-local"]')) enhanceDateInput(root);
+  root.querySelectorAll('input[type="date"],input[type="datetime-local"]').forEach(enhanceDateInput);
+}
+new MutationObserver(ms=>{ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)enhanceDateInputsIn(n);}));}).observe(document.body,{childList:true,subtree:true});
+enhanceDateInputsIn(document);
+
+// ── ถามยืนยันเมื่อเลือกเดือน/ปี/วันที่ที่ไม่ใช่ปัจจุบัน ──────────────
+function _periodLabel(m,y){return MONTHS_TH[m-1]+' '+(DATE_YEAR_BE?(y+543)+' (พ.ศ.)':y+' (ค.ศ.)');}
+function confirmPeriod(m,y){
+  const n=new Date(),cm=n.getMonth()+1,cy=n.getFullYear();
+  if(m===cm&&y===cy) return true;
+  return window.confirm('คุณเลือก '+_periodLabel(m,y)+'\nซึ่งไม่ใช่เดือนปัจจุบัน ('+_periodLabel(cm,cy)+')\n\nยืนยันว่าต้องการเลือกแบบนี้ใช่หรือไม่?');
+}
+function _curFY(){const n=new Date();return n.getMonth()+1>=10?n.getFullYear()+1:n.getFullYear();}
+const _PERIOD_PAIR={fMonth:'fYear',fYear:'fMonth',dMonth:'dYear',dYear:'dMonth',icMonth:'icYear',icYear:'icMonth',diseaseMonth:'diseaseYear',diseaseYear:'diseaseMonth',kpiMonth:'kpiYear',kpiYear:'kpiMonth',mMonth:'mYear',mYear:'mMonth'};
+const _PERIOD_FY=new Set(['yYear','kpiFiscalYear','diseaseFiscalYear','statFiscalYear']);
+const _PERIOD_Y=new Set(['dYearOnly']);
+function _isPeriodSel(id){return !!(_PERIOD_PAIR[id]||_PERIOD_FY.has(id)||_PERIOD_Y.has(id));}
+function _periodDefault(id){const n=new Date();if(/Month$/.test(id))return n.getMonth()+1;if(_PERIOD_FY.has(id))return _curFY();return n.getFullYear();}
+function _dateFieldLabel(t){
+  const l=(t.closest('.fg')&&t.closest('.fg').querySelector('label'))||t.closest('label');
+  return l?(l.textContent||'').replace('*','').replace(/\s+/g,' ').trim():'';
+}
+document.addEventListener('focusin',e=>{const t=e.target;if(t&&t.tagName==='SELECT'&&_isPeriodSel(t.id))t.dataset.prev=t.value;},true);
+// ทำงานก่อน handler เดิมของช่องนั้น (capture) — ถ้าไม่ยืนยันจะคืนค่าเดิมและหยุดไม่ให้ handler เดิมทำงาน
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(!t||!t.tagName) return;
+  if(t.tagName==='SELECT'&&_isPeriodSel(t.id)){
+    let ok=true;
+    if(_PERIOD_PAIR[t.id]){
+      const other=document.getElementById(_PERIOD_PAIR[t.id]);
+      const isMonth=/Month$/.test(t.id);
+      const m=parseInt(isMonth?t.value:(other&&other.value)),y=parseInt(isMonth?(other&&other.value):t.value);
+      if(m&&y) ok=confirmPeriod(m,y);
+    } else {
+      const y=parseInt(t.value),cur=_PERIOD_FY.has(t.id)?_curFY():new Date().getFullYear();
+      if(y&&y!==cur){
+        const what=_PERIOD_FY.has(t.id)?'ปีงบประมาณ':'ปี';
+        const shown=_PERIOD_FY.has(t.id)?(DATE_YEAR_BE?(y+543)+' (พ.ศ.)':y+' (ค.ศ.)'):(DATE_YEAR_BE?(y+543)+' (พ.ศ.)':y+' (ค.ศ.)');
+        const curShown=DATE_YEAR_BE?(cur+543)+' (พ.ศ.)':cur+' (ค.ศ.)';
+        ok=window.confirm('คุณเลือก'+what+' '+shown+'\nซึ่งไม่ใช่'+what+'ปัจจุบัน ('+curShown+')\n\nยืนยันว่าต้องการเลือกแบบนี้ใช่หรือไม่?');
+      }
+    }
+    if(!ok){
+      const prev=t.dataset.prev;
+      t.value=(prev!==undefined&&prev!=='')?prev:String(_periodDefault(t.id));
+      e.stopImmediatePropagation();
+    } else t.dataset.prev=t.value;
+    return;
+  }
+  if(t.tagName==='INPUT'&&(t.type==='date'||t.type==='datetime-local')){
+    const v=t.value;
+    if(!v||DATE_CONFIRM_SKIP.has(t.name)){t.dataset.prev=v;return;}
+    if(v.slice(0,10)===localToday()){t.dataset.prev=v;return;}
+    const label=_dateFieldLabel(t);
+    const disp=t.type==='datetime-local'?toDMYT(v):toDMY(v);
+    const ok=window.confirm('คุณเลือกวันที่ '+disp+(label?' ใน "'+label+'"':'')+'\nซึ่งไม่ใช่วันนี้ ('+toDMY(localToday())+')\n\nยืนยันว่าต้องการเลือกวันที่นี้ใช่หรือไม่?');
+    if(!ok){
+      const desc=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+      desc.set.call(t,t.dataset.prev||'');
+      if(t._dmySync)t._dmySync();
+      e.stopImmediatePropagation();
+    } else t.dataset.prev=v;
+  }
+},true);
 
 // ============================================================
 // CONSTANTS
@@ -2369,7 +2520,7 @@ async function loadLog(){
     if(!filtered.length){el.innerHTML='<div class="log-row" style="color:#9ca3af">ยังไม่มีกิจกรรม</div>';return;}
     el.innerHTML=filtered.map(l=>{
       let d=String(l.date||''),t=String(l.time||'');
-      if(d.length>10){try{const dt=new Date(d);if(!isNaN(dt))d=dt.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){}}
+      if(d.length>10){try{const dt=new Date(d);if(!isNaN(dt))d=dt.toLocaleDateString(DATE_LOCALE(),{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){}}
       if(t.length>5){try{const dt=new Date(t);if(!isNaN(dt))t=dt.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});}catch(e){}}
       return `<div class="log-row"><span class="log-who">${l.user||'-'}</span><span class="log-action">${l.action||'-'}</span><span class="log-dt">${d} ${t}</span></div>`;
     }).join('');
@@ -2432,6 +2583,7 @@ function navMonth(dir){
   m+=dir;
   if(m<1){m=12;y--;}
   else if(m>12){m=1;y++;}
+  if(!confirmPeriod(m,y)) return; // ไม่ใช่เดือนปัจจุบัน → ถามยืนยันก่อน
   mEl.value=m;
   // ตรวจว่ามีปีนั้นใน dropdown ไหม
   const opts=Array.from(yEl.options).map(o=>parseInt(o.value));
@@ -2746,8 +2898,8 @@ function renderIcBedList(){
               if(!started) return '';
               return `<div style="display:flex;gap:8px;font-size:10px;padding:3px 0;border-bottom:1px solid var(--g100)">
                 <span style="font-weight:600;width:80px">${ic.label}</span>
-                <span>เริ่ม: ${started||'-'}</span>
-                <span>หยุด: ${stopped||'-'}</span>
+                <span>เริ่ม: ${fmtDate(started)||'-'}</span>
+                <span>หยุด: ${fmtDate(stopped)||'-'}</span>
               </div>`;
             }).join('')||'<span style="font-size:10px;color:#9ca3af">ยังไม่มีข้อมูล</span>'}
           </div>
@@ -2790,8 +2942,8 @@ function renderIcBedList(){
           <div>
             <label style="font-size:10px;color:#6b7280">🧠 ICDSC Score <span style="font-size:9px">(RN)</span></label>
             <div style="display:flex;gap:8px;font-size:11px;background:#f9fafb;padding:6px 8px;border-radius:6px;border:1px solid var(--g200)">
-              <span>ล่าสุด: <b>${bd.icdscLatest||'-'}</b> (${bd.icdscDate||'-'})</span>
-              <span>สูงสุด: <b>${bd.icdscMax||'-'}</b> (${bd.icdscMaxDate||'-'})</span>
+              <span>ล่าสุด: <b>${bd.icdscLatest||'-'}</b> (${fmtDate(bd.icdscDate)||'-'})</span>
+              <span>สูงสุด: <b>${bd.icdscMax||'-'}</b> (${fmtDate(bd.icdscMaxDate)||'-'})</span>
               ${parseInt(bd.icdscLatest||0)>=4?'<span style="color:#c62828;font-weight:700">⚠️ Delirium</span>':''}
             </div>
           </div>
@@ -3129,7 +3281,7 @@ function showRNFormForBed(bedId){
       <div style="font-size:11px;background:#f9fafb;padding:6px 8px;border-radius:6px;border:1px solid var(--g200)">
         คะแนน: <b>${bd.news2Score!==undefined&&bd.news2Score!==''?bd.news2Score:'-'}</b>
         ${bd.news2Score>=7?'<span style="color:#c62828;font-weight:700"> 🔴 High</span>':bd.news2Score>=5?'<span style="color:#e65100;font-weight:700"> 🟠 Medium</span>':bd.news2Score>=1?'<span style="color:#f9a825;font-weight:700"> 🟡 Low</span>':''}
-        ${bd.news2Date?`<span style="color:#6b7280;font-size:10px"> (${bd.news2Date})</span>`:''}
+        ${bd.news2Date?`<span style="color:#6b7280;font-size:10px"> (${fmtDate(bd.news2Date)})</span>`:''}
       </div>
     </div>
     <!-- SOS Score -->
@@ -3181,7 +3333,7 @@ function showRNFormForBed(bedId){
         📋 ประเมิน ICDSC (8 ข้อ)
       </button>
       <div style="display:flex;gap:6px;font-size:11px">
-        <span>ล่าสุด: <b>${bd.icdscLatest||'-'}</b> (${bd.icdscDate||'-'})</span>
+        <span>ล่าสุด: <b>${bd.icdscLatest||'-'}</b> (${fmtDate(bd.icdscDate)||'-'})</span>
         <span>สูงสุด: <b>${bd.icdscMax||'-'}</b></span>
       </div>
     </div>
@@ -3596,7 +3748,7 @@ function buildIcMessage(){
   const nurse=document.getElementById('icNurse')?.value||'-';
   const dtVal=document.getElementById('icDateTime')?.value||'';
   const dt=dtVal?new Date(dtVal):new Date();
-  const dtStr=dt.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+
+  const dtStr=dt.toLocaleDateString(DATE_LOCALE(),{day:'2-digit',month:'2-digit',year:'numeric'})+' '+
                dt.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
 
   const admitted=_icAdmittedPts;
@@ -4113,7 +4265,7 @@ function renderTbl(){
 }
 function prevPg(){if(_curPg>1){_curPg--;renderTbl();}}
 function nextPg(){if(_curPg<Math.ceil(_filtPts.length/pgSz)){_curPg++;renderTbl();}}
-function fmtDate(v){if(!v)return'';try{const d=new Date(v);return isNaN(d)?String(v):d.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){return String(v);}}
+function fmtDate(v){if(!v)return'';try{const d=new Date(v);return isNaN(d)?String(v):d.toLocaleDateString(DATE_LOCALE(),{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){return String(v);}}
 function esc(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
 function di(v){if(!v)return'';try{const d=new Date(v);return isNaN(d)?'':(d.toISOString().split('T')[0]);}catch(e){return'';}}
 // วันที่ปัจจุบันตามเวลาเครื่อง (yyyy-mm-dd) — ไม่ใช้ toISOString เพราะเป็น UTC ช่วง 00:00-07:00 จะได้วันที่เมื่อวาน
@@ -4415,24 +4567,25 @@ function checkDateYear(input){
 
 function checkDateYear(input){
   const val=input.value;
-  if(!val){input.style.borderColor='';input.title='';return;}
+  const vis=input._dmyTxt||input; // ช่องที่ผู้ใช้มองเห็น (ถ้าเป็นช่อง วว/ดด/ปปปป ให้ไฮไลต์ที่ช่องนั้น)
+  if(!val){vis.style.borderColor='';vis.title='';return;}
   const yr=parseInt(val.split('-')[0]);
   const cy=new Date().getFullYear();
   let msg='';
   if(yr>=2400) msg=`⚠️ ปี ${yr} ดูเหมือนเป็น พ.ศ. — กรุณาใช้ปี ค.ศ. (เช่น ${yr-543})`;
-  else if(yr<1900||yr>cy+1) msg=`⚠️ ปี ${yr} ผิดปกติ — กรุณาใช้ปี ค.ศ.`;
+  else if(yr<1900||yr>cy+1) msg=`⚠️ ปี ${_dyShow(yr)} ผิดปกติ — กรุณาตรวจสอบวันที่อีกครั้ง`;
   if(msg){
-    input.style.borderColor='#ef4444';
-    input.style.background='#fff1f1';
-    input.title=msg;
+    vis.style.borderColor='#ef4444';
+    vis.style.background='#fff1f1';
+    vis.title=msg;
     // แสดง tooltip ใต้ช่อง
     let warn=input.parentElement.querySelector('.year-warn');
     if(!warn){warn=document.createElement('div');warn.className='year-warn';warn.style='color:#ef4444;font-size:10.5px;margin-top:2px;font-weight:600';input.parentElement.appendChild(warn);}
     warn.textContent=msg;
   } else {
-    input.style.borderColor='';
-    input.style.background='';
-    input.title='';
+    vis.style.borderColor='';
+    vis.style.background='';
+    vis.title='';
     const warn=input.parentElement.querySelector('.year-warn');
     if(warn) warn.remove();
   }
@@ -5323,7 +5476,7 @@ async function renderPendingOpts(){
     document.getElementById('pendingOptsCard').style.display='';
     tbl.innerHTML = list.map(item=>{
       const label = OPTS_LABELS[item.optKey] || item.optKey;
-      const dateStr = item.submittedAt ? new Date(item.submittedAt).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}) : '-';
+      const dateStr = item.submittedAt ? new Date(item.submittedAt).toLocaleDateString(DATE_LOCALE(),{day:'2-digit',month:'2-digit',year:'numeric'}) : '-';
       return `<tr>
         <td style="font-size:11px;font-weight:600">${label}</td>
         <td><span style="background:#fff9c4;color:#f57f17;padding:2px 8px;border-radius:6px;font-weight:600;font-size:12px">${esc(item.value)}</span></td>
@@ -5910,7 +6063,7 @@ function renderBedAdmitTable(pts){
   };
   const fmtD=(v)=>{
     if(!v) return '-';
-    try{const d=new Date(v);return isNaN(d)?v:d.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit'});}catch(e){return v;}
+    try{const d=new Date(v);return isNaN(d)?v:d.toLocaleDateString(DATE_LOCALE(),{day:'2-digit',month:'2-digit'});}catch(e){return v;}
   };
   body.innerHTML=mergedPts.map(p=>{
     const breath=p['การหายใจ']||(p['Ventilator (Name)']?p['Ventilator (Name)']:'');

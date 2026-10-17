@@ -1243,8 +1243,9 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
       </div>
 
       <div class="tbl-wrap" style="margin-bottom:16px" id="pendingOptsCard">
-        <div class="tbl-head">
+        <div class="tbl-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
           <div class="tbl-title">⏳ รายการรออนุมัติ (เพิ่มโดยผู้ใช้งาน)</div>
+          <button class="btn btn-sm" id="approveAllPendingBtn" style="background:#2e7d32;color:white;font-weight:700" onclick="approveAllPendingOpts()">✅ อนุมัติทั้งหมด</button>
         </div>
         <div style="overflow-x:auto">
           <table>
@@ -1904,7 +1905,7 @@ function hideLoad(){document.getElementById('loadOverlay').classList.remove('ope
 // ทุกครั้งที่ปล่อยเวอร์ชันใหม่: แก้ APP_VERSION ในไฟล์นี้ และ APP_LATEST_VERSION ใน Code.gs ให้เป็นเลขเดียวกัน
 // รูปแบบ 'YYYY-MM-DD.NN' (เทียบเป็นข้อความได้ — เวอร์ชันใหม่กว่าจะมีค่ามากกว่า)
 // ============================================================
-const APP_VERSION='2026-10-17.09';
+const APP_VERSION='2026-10-17.10';
 let _updateDismissedAt=0,_lastUpdateCheck=0;
 
 async function checkAppUpdate(force=false){
@@ -5553,6 +5554,8 @@ async function renderPendingOpts(){
       return;
     }
     document.getElementById('pendingOptsCard').style.display='';
+    const allBtn=document.getElementById('approveAllPendingBtn');
+    if(allBtn) allBtn.textContent='✅ อนุมัติทั้งหมด ('+list.length+')';
     tbl.innerHTML = list.map(item=>{
       const label = OPTS_LABELS[item.optKey] || item.optKey;
       const dateStr = item.submittedAt ? new Date(item.submittedAt).toLocaleDateString(DATE_LOCALE(),{day:'2-digit',month:'2-digit',year:'numeric'}) : '-';
@@ -5579,6 +5582,38 @@ async function approvePendingOptItem(id, action){
     toast(`${label}รายการสำเร็จ ✓`);
     await loadOpts();      // โหลด opts ใหม่ (ถ้าอนุมัติจะมีรายการนี้แล้ว)
     renderOpts();          // รีเฟรช editor + pending list
+    loadPendingOptsBadge();
+    loadLog();
+  }catch(e){ toast(e.message,true); }
+  finally{ hideLoad(); }
+}
+
+// อนุมัติรายการ Dropdown ที่รออนุมัติ "ทั้งหมด" — ถามยืนยันก่อน แล้วอนุมัติเฉพาะรายการที่แอดมินเห็นในหน้านี้
+async function approveAllPendingOpts(){
+  if(!requireAdmin()) return;
+  let list=[];
+  try{ list=await api('getPendingOpts'); }catch(e){ toast(e.message,true); return; }
+  if(!list.length){ toast('ไม่มีรายการรออนุมัติ'); renderOpts(); return; }
+  const preview=list.slice(0,8).map(i=>'• '+(OPTS_LABELS[i.optKey]||i.optKey)+': '+i.value).join('\n')
+    +(list.length>8?'\n… และอีก '+(list.length-8)+' รายการ':'');
+  if(!confirm('อนุมัติรายการที่รออนุมัติทั้งหมด '+list.length+' รายการ?\n\n'+preview+'\n\nรายการทั้งหมดจะถูกเพิ่มเข้า Dropdown ทันที')) return;
+  showLoad('กำลังอนุมัติทั้งหมด...');
+  let done=0,failed=0;
+  try{
+    try{
+      const r=await api('approveAllPendingOpts',{},{ids:list.map(i=>i.id)});
+      done=r.approved;
+    }catch(e){
+      if(!/Unknown action/i.test(String((e&&e.message)||e))) throw e;
+      // Code.gs ยังเป็นตัวเก่า (ยังไม่มีคำสั่งอนุมัติทั้งหมด) → อนุมัติทีละรายการแทน (ช้ากว่า)
+      for(const it of list){
+        try{ await api('approvePendingOpt',{},{id:it.id,action:'approve'}); done++; }catch(e2){ failed++; }
+      }
+    }
+    await api('writeLog',{},{user:currentUser.fullname,action:'อนุมัติรายการ dropdown ทั้งหมด '+done+' รายการ'});
+    toast(failed?('อนุมัติ '+done+' รายการ (ไม่สำเร็จ '+failed+')'):('อนุมัติทั้งหมด '+done+' รายการสำเร็จ ✓'),!!failed);
+    await loadOpts();
+    renderOpts();
     loadPendingOptsBadge();
     loadLog();
   }catch(e){ toast(e.message,true); }

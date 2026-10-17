@@ -134,7 +134,7 @@ body.has-marquee .sidebar{padding-top:28px}
 body.has-marquee .edit-sidebar{top:calc(var(--topbar-h) + 28px)}
 .main.full-width{margin-left:0}
 .sec{display:none}.sec.active{display:block}
-.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:var(--bottom-nav-h);background:white;border-top:1px solid var(--g200);z-index:9999;flex-direction:row;align-items:stretch;transform:none!important}
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:var(--bottom-nav-h);background:white;border-top:1px solid var(--g200);z-index:150;flex-direction:row;align-items:stretch;transform:none!important}
 .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--gray500);font-size:9px;font-weight:600;border:none;background:none;font-family:'Sarabun',sans-serif;padding:4px 2px}
 .bn-item svg{width:18px;height:18px}
 .bn-item.active{color:var(--g700)}
@@ -232,6 +232,8 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
 .toast{position:fixed;bottom:70px;right:12px;z-index:99999;background:#1b5e20;color:white;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(70px);opacity:0;transition:all .3s;max-width:calc(100vw - 24px)}
 .toast.show{transform:translateY(0);opacity:1}
 .toast.err{background:#c62828}
+.toast.toast-top{bottom:auto;top:calc(10px + env(safe-area-inset-top,0px));right:auto;left:50%;margin-left:0;max-width:calc(100vw - 96px);transform:translate(-50%,-70px)}
+.toast.toast-top.show{transform:translate(-50%,0)}
 .loading-msg{text-align:center;padding:24px;color:#9ca3af;font-size:12px}
 .load-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;align-items:center;justify-content:center}
 .load-overlay.open{display:flex}
@@ -407,7 +409,7 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
   .chart-container{height:200px}
   .toast{bottom:calc(var(--bottom-nav-h) + 8px)}
   .overlay{padding:0;align-items:flex-end}
-  .modal{border-radius:16px 16px 0 0;max-height:92vh;max-height:92dvh;display:flex;flex-direction:column}
+  .modal{border-radius:16px 16px 0 0;max-height:92vh;max-height:92dvh;display:flex;flex-direction:column;margin:auto 0 0 0}
   .modal-bd{flex:1 1 auto;max-height:none}
   .modal-ft{padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
   table,th,td{font-size:10.5px}th{padding:6px 5px}td{padding:6px 5px}
@@ -1883,7 +1885,7 @@ function hideLoad(){document.getElementById('loadOverlay').classList.remove('ope
 // ทุกครั้งที่ปล่อยเวอร์ชันใหม่: แก้ APP_VERSION ในไฟล์นี้ และ APP_LATEST_VERSION ใน Code.gs ให้เป็นเลขเดียวกัน
 // รูปแบบ 'YYYY-MM-DD.NN' (เทียบเป็นข้อความได้ — เวอร์ชันใหม่กว่าจะมีค่ามากกว่า)
 // ============================================================
-const APP_VERSION='2026-10-17.04';
+const APP_VERSION='2026-10-17.06';
 let _updateDismissedAt=0,_lastUpdateCheck=0;
 
 async function checkAppUpdate(force=false){
@@ -1920,7 +1922,29 @@ function reloadForUpdate(){
   try{const u=new URL(location.href);u.searchParams.set('_v',Date.now());location.replace(u.toString());}
   catch(e){location.reload();}
 }
-function showAppVersion(){document.querySelectorAll('.app-ver').forEach(e=>{e.textContent='เวอร์ชัน '+APP_VERSION;});}
+// ตรวจสอบอัปเดตด้วยมือ (กดจากป้ายเวอร์ชัน) — บอกผลชัดเจนทุกกรณี ใช้ไล่ปัญหาว่าทำไมแถบแจ้งเตือนไม่ขึ้น
+async function checkAppUpdateManual(){
+  try{
+    const r=await api('getVersion');
+    const sv=String((r&&r.version)||'');
+    _lastUpdateCheck=Date.now();
+    if(sv&&sv>APP_VERSION){_updateDismissedAt=0;showUpdateBanner(r.message);toast('มีเวอร์ชันใหม่ ('+sv+') — กรุณาปิดโปรแกรมแล้วเปิดใหม่');}
+    else{hideUpdateBanner();toast('เป็นเวอร์ชันล่าสุดแล้ว (เครื่องนี้ '+APP_VERSION+' | ระบบ '+(sv||'-')+')');}
+  }catch(e){
+    const m=String((e&&e.message)||e);
+    toast(/Unknown action/i.test(m)?'ฝั่ง Code.gs ยังเป็นเวอร์ชันเก่า (ยังไม่มี getVersion) — ต้อง Deploy Code.gs ตัวใหม่':'ตรวจสอบไม่ได้: '+m,true);
+  }
+}
+function showAppVersion(){
+  document.querySelectorAll('.app-ver').forEach(e=>{
+    e.textContent='เวอร์ชัน '+APP_VERSION+' · ';
+    const a=document.createElement('span');
+    a.textContent='ตรวจสอบอัปเดต';
+    a.style.cssText='color:#1565c0;text-decoration:underline;cursor:pointer';
+    a.onclick=checkAppUpdateManual;
+    e.appendChild(a);
+  });
+}
 showAppVersion();
 window.addEventListener('load',()=>{showAppVersion();setTimeout(()=>checkAppUpdate(true),4000);});
 setInterval(()=>checkAppUpdate(true),10*60*1000);
@@ -7157,7 +7181,7 @@ function isMobile(){return window.innerWidth<768;}
 function toggleSidebar(){const sb=document.getElementById('sidebar'),ov=document.getElementById('sidebarOverlay'),main=document.querySelector('.main');if(isMobile()){const open=sb.classList.contains('open');sb.classList.toggle('open',!open);ov.classList.toggle('open',!open);}else{const col=sb.classList.contains('collapsed');sb.classList.toggle('collapsed',!col);main.classList.toggle('full-width',!col);}}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}
 window.addEventListener('resize',()=>{if(!isMobile()){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');if(!document.getElementById('sidebar').classList.contains('collapsed'))document.querySelector('.main').classList.remove('full-width');}});
-function toast(msg,isErr=false){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(isErr?' err':'');setTimeout(()=>t.classList.add('show'),10);setTimeout(()=>t.classList.remove('show'),3500);}
+function toast(msg,isErr=false){const t=document.getElementById('toast');t.textContent=msg;const modalOpen=!!document.querySelector('.overlay.open,.conf-overlay.open');t.className='toast'+(isErr?' err':'')+(modalOpen?' toast-top':'');setTimeout(()=>t.classList.add('show'),10);setTimeout(()=>t.classList.remove('show'),3500);}
 </script>
 </body>
 </html>

@@ -438,6 +438,25 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
 .dmy-btn{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:none;background:transparent;cursor:pointer;font-size:15px;line-height:1;padding:4px}
 .dmy-hidden{position:absolute!important;right:0;top:0;width:1px!important;height:1px!important;min-height:0!important;opacity:0;pointer-events:none;border:0!important;padding:0!important;margin:0!important}
 .dmy-text.dmy-bad{border-color:#e53935!important;background:#fff1f1!important}
+
+/* ── แจ้งเตือนอัปเดตแบบฉุกเฉิน ── */
+.upd-ov{display:none;position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.65);align-items:center;justify-content:center;padding:16px}
+.upd-box{background:#fff;border-radius:16px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden;border:3px solid #c62828;animation:updPop .35s ease-out}
+.upd-head{background:linear-gradient(135deg,#c62828,#e53935);color:#fff;font-size:18px;font-weight:800;padding:14px 18px;display:flex;align-items:center;gap:10px}
+.upd-ico{font-size:26px;display:inline-block;animation:updShake 1.2s ease-in-out infinite}
+.upd-body{padding:16px 18px 6px}
+.upd-main{font-size:15px;line-height:1.55;margin:0 0 10px;color:#222}
+.upd-sub{font-size:13px;line-height:1.5;margin:0 0 8px;color:#555;background:#fff8e1;border-left:4px solid #f9a825;padding:8px 10px;border-radius:6px}
+.upd-what{display:none;font-size:12px;color:#666;margin:6px 0}
+.upd-actions{display:flex;flex-direction:column;gap:8px;padding:10px 18px 18px}
+.upd-btn{border:none;border-radius:12px;padding:13px 14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit}
+.upd-primary{background:#c62828;color:#fff}
+.upd-secondary{background:#f1f3f4;color:#333;border:1.5px solid #cfd4d8}
+.upd-pill{display:none;position:fixed;top:calc(6px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:100000;background:#c62828;color:#fff;border:2px solid #fff;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;animation:updPulse 1.6s infinite;white-space:nowrap}
+@keyframes updPulse{0%{box-shadow:0 0 0 0 rgba(229,57,53,.75)}70%{box-shadow:0 0 0 12px rgba(229,57,53,0)}100%{box-shadow:0 0 0 0 rgba(229,57,53,0)}}
+@keyframes updShake{0%,50%,100%{transform:rotate(0)}10%,30%{transform:rotate(-14deg)}20%,40%{transform:rotate(14deg)}}
+@keyframes updPop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.upd-ico,.upd-pill,.upd-box{animation:none}}
 </style>
 </head>
 <body>
@@ -1885,7 +1904,7 @@ function hideLoad(){document.getElementById('loadOverlay').classList.remove('ope
 // ทุกครั้งที่ปล่อยเวอร์ชันใหม่: แก้ APP_VERSION ในไฟล์นี้ และ APP_LATEST_VERSION ใน Code.gs ให้เป็นเลขเดียวกัน
 // รูปแบบ 'YYYY-MM-DD.NN' (เทียบเป็นข้อความได้ — เวอร์ชันใหม่กว่าจะมีค่ามากกว่า)
 // ============================================================
-const APP_VERSION='2026-10-17.07';
+const APP_VERSION='2026-10-17.09';
 let _updateDismissedAt=0,_lastUpdateCheck=0;
 
 async function checkAppUpdate(force=false){
@@ -1899,24 +1918,59 @@ async function checkAppUpdate(force=false){
     else hideUpdateBanner();
   }catch(e){ /* เงียบไว้: Code.gs เก่าที่ยังไม่มี getVersion หรือเน็ตหลุด */ }
 }
-function showUpdateBanner(msg){
-  if(Date.now()-_updateDismissedAt<10*60*1000) return; // กด "เตือนภายหลัง" แล้ว เว้น 10 นาทีค่อยเตือนใหม่
-  let b=document.getElementById('updateBanner');
-  if(!b){
-    b=document.createElement('div');b.id='updateBanner';
-    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:150;background:#e65100;color:#fff;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(0,0,0,.35);font-size:13px;font-weight:600';
-    const txt=document.createElement('span');txt.id='updateBannerText';txt.style.cssText='flex:1;min-width:200px';
-    const btnStyle='border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit';
-    const b1=document.createElement('button');b1.textContent='โหลดใหม่ตอนนี้';b1.style.cssText=btnStyle+';background:#fff;color:#e65100';b1.onclick=reloadForUpdate;
-    const b2=document.createElement('button');b2.textContent='เตือนภายหลัง';b2.style.cssText=btnStyle+';background:rgba(255,255,255,.2);color:#fff';b2.onclick=dismissUpdateBanner;
-    b.append(txt,b1,b2);
-    document.body.appendChild(b);
-  }
-  document.getElementById('updateBannerText').textContent='🔔 มีการอัปเดตระบบ — กรุณาปิดโปรแกรมแล้วเปิดใหม่'+(msg?' ('+msg+')':'');
-  b.style.display='flex';
+// ── แจ้งเตือนอัปเดตแบบฉุกเฉิน ─────────────────────────────────
+// มีเวอร์ชันใหม่ → เด้งหน้าต่างเตือนเต็มหน้าจอ แนะนำให้ปิดโปรแกรมแล้วเปิดใหม่ แต่ให้เลือก "ขอลงข้อมูลให้เสร็จก่อน" ได้
+// ถ้าเลือกลงข้อมูลก่อน จะเหลือป้ายแดงกะพริบที่ด้านบน (กดเพื่อเปิดหน้าต่างเตือนอีกครั้ง) และเด้งเตือนซ้ำทุก 10 นาที
+let _updateMsg='',_updatePending=false,_updateTimer=null;
+const UPDATE_REMIND_MS=10*60*1000;
+function _ensureUpdateUI(){
+  if(document.getElementById('updateDialog')) return;
+  const ov=document.createElement('div');ov.id='updateDialog';ov.className='upd-ov';
+  ov.innerHTML='<div class="upd-box" role="alertdialog" aria-modal="true">'+
+    '<div class="upd-head"><span class="upd-ico">⚠️</span> มีการอัปเดตระบบ</div>'+
+    '<div class="upd-body">'+
+      '<p class="upd-main">แนะนำให้ <b>ปิดโปรแกรมแล้วเปิดใหม่ตอนนี้</b><br>เพื่อใช้ระบบเวอร์ชันล่าสุด และป้องกันข้อมูลบันทึกผิดพลาด</p>'+
+      '<p class="upd-sub">ถ้ากำลังลงข้อมูลอยู่ ให้ลงข้อมูลให้ครบและกดบันทึกก่อนได้ แล้วค่อยปิดและเปิดใหม่</p>'+
+      '<div class="upd-what" id="updateWhat"></div>'+
+    '</div>'+
+    '<div class="upd-actions">'+
+      '<button type="button" class="upd-btn upd-primary" id="updReload">🔄 โหลดใหม่ตอนนี้</button>'+
+      '<button type="button" class="upd-btn upd-secondary" id="updLater">✍️ ขอลงข้อมูลให้เสร็จก่อน</button>'+
+    '</div></div>';
+  document.body.appendChild(ov);
+  document.getElementById('updReload').onclick=reloadForUpdate;
+  document.getElementById('updLater').onclick=dismissUpdateBanner;
+  const pill=document.createElement('button');pill.type='button';pill.id='updatePill';pill.className='upd-pill';
+  pill.textContent='⚠️ มีอัปเดต — กดเพื่อดู';pill.onclick=openUpdateDialog;
+  document.body.appendChild(pill);
 }
-function hideUpdateBanner(){const b=document.getElementById('updateBanner');if(b)b.style.display='none';}
-function dismissUpdateBanner(){_updateDismissedAt=Date.now();hideUpdateBanner();}
+function openUpdateDialog(){
+  _ensureUpdateUI();
+  const w=document.getElementById('updateWhat');
+  w.textContent=_updateMsg?('สิ่งที่อัปเดต: '+_updateMsg):'';
+  w.style.display=_updateMsg?'block':'none';
+  document.getElementById('updateDialog').style.display='flex';
+  document.getElementById('updatePill').style.display='none';
+  try{if(navigator.vibrate)navigator.vibrate([200,100,200]);}catch(e){}
+}
+function showUpdateBanner(msg){
+  _updateMsg=msg||'';_updatePending=true;
+  _ensureUpdateUI();
+  if(document.getElementById('updateDialog').style.display==='flex') return;   // เปิดอยู่แล้ว
+  if(Date.now()-_updateDismissedAt>=UPDATE_REMIND_MS) openUpdateDialog();
+  else document.getElementById('updatePill').style.display='block';
+}
+function hideUpdateBanner(){
+  _updatePending=false;clearTimeout(_updateTimer);
+  ['updateDialog','updatePill'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+}
+function dismissUpdateBanner(){
+  _updateDismissedAt=Date.now();
+  const d=document.getElementById('updateDialog');if(d)d.style.display='none';
+  const p=document.getElementById('updatePill');if(p)p.style.display='block';
+  clearTimeout(_updateTimer);
+  _updateTimer=setTimeout(()=>{if(_updatePending)openUpdateDialog();},UPDATE_REMIND_MS); // เด้งเตือนซ้ำ
+}
 function reloadForUpdate(){
   if(document.querySelector('.overlay.open') && !confirm('มีหน้าต่างกรอกข้อมูลที่ยังเปิดอยู่ ข้อมูลที่ยังไม่บันทึกจะหายไป\nต้องการโหลดใหม่ตอนนี้หรือไม่?')) return;
   try{const u=new URL(location.href);u.searchParams.set('_v',Date.now());location.replace(u.toString());}
@@ -1928,7 +1982,7 @@ async function checkAppUpdateManual(){
     const r=await api('getVersion');
     const sv=String((r&&r.version)||'');
     _lastUpdateCheck=Date.now();
-    if(sv&&sv>APP_VERSION){_updateDismissedAt=0;showUpdateBanner(r.message);toast('มีเวอร์ชันใหม่ ('+sv+') — กรุณาปิดโปรแกรมแล้วเปิดใหม่');}
+    if(sv&&sv>APP_VERSION){_updateDismissedAt=0;showUpdateBanner(r.message);toast('มีเวอร์ชันใหม่ ('+sv+')');}
     else{hideUpdateBanner();toast('เป็นเวอร์ชันล่าสุดแล้ว (เครื่องนี้ '+APP_VERSION+' | ระบบ '+(sv||'-')+')');}
   }catch(e){
     const m=String((e&&e.message)||e);
@@ -6512,12 +6566,13 @@ async function loadIC(){
   const FY_LABELS=fyMonths.map(o=>MONTHS_TH[o.m-1]);
   const fyLbl=document.getElementById('icFyLbl');if(fyLbl)fyLbl.textContent='(ปีงบ '+(fyIC+543)+': ต.ค.–ก.ย.)';
   const allM=await Promise.all(fyMonths.map(o=>fetchMonthPts(o.m,o.y)));hideLoad();
-  const vtD=[],alD=[],clD=[],fcD=[],icdD=[],dlD=[];allM.forEach(mp=>{vtD.push(icDays(mp,'Ventilator (Start)','Ventilator (End)'));alD.push(icDays(mp,'A-Line (Start)','A-Line (End)'));clD.push(icDays(mp,'C-Line (Start)','C-Line (End.)'));fcD.push(icDays(mp,'F/C (Start)','F/C (END)'));icdD.push(icDays(mp,'ICD (Start)','ICD (End)'));dlD.push(icDays(mp,'DL for HD (Start)','DL for HD (End)'));});
+  const vtD=[],alD=[],clD=[],ivD=[],fcD=[],icdD=[],dlD=[];allM.forEach(mp=>{vtD.push(icDays(mp,'Ventilator (Start)','Ventilator (End)'));alD.push(icDays(mp,'A-Line (Start)','A-Line (End)'));clD.push(icDays(mp,'C-Line (Start)','C-Line (End.)'));ivD.push(icDays(mp,'IV (Start)','IV (End)'));fcD.push(icDays(mp,'F/C (Start)','F/C (END)'));icdD.push(icDays(mp,'ICD (Start)','ICD (End)'));dlD.push(icDays(mp,'DL for HD (Start)','DL for HD (End)'));});
 
   // Total รวมทั้งปี
   const totalVtD=vtD.reduce((a,b)=>a+b,0);
   const totalAlD=alD.reduce((a,b)=>a+b,0);
   const totalClD=clD.reduce((a,b)=>a+b,0);
+  const totalIvD=ivD.reduce((a,b)=>a+b,0);
   const totalFcD=fcD.reduce((a,b)=>a+b,0);
   const totalIcdD=icdD.reduce((a,b)=>a+b,0);
   const totalDlD=dlD.reduce((a,b)=>a+b,0);
@@ -6540,7 +6595,8 @@ async function loadIC(){
       <div class="ic-sub">เดือนนี้ <b>${monthClD}</b> วัน</div>
       <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมปีงบ ${fyIC+543}: ${totalClD} วัน</div></div>
     <div class="ic-item"><div class="ic-label">🩸 IV</div><div class="ic-value">${pts.filter(p=>p['IV (Start)']).length} คน</div>
-      <div class="ic-sub">เดือนนี้ <b>${icDays(pts,'IV (Start)','IV (End)')}</b> วัน</div></div>
+      <div class="ic-sub">เดือนนี้ <b>${icDays(pts,'IV (Start)','IV (End)')}</b> วัน</div>
+      <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมปีงบ ${fyIC+543}: ${totalIvD} วัน</div></div>
     <div class="ic-item"><div class="ic-label">🪠 F/C</div><div class="ic-value">${s.fcCount} คน</div>
       <div class="ic-sub">เดือนนี้ <b>${monthFcD}</b> วัน</div>
       <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมปีงบ ${fyIC+543}: ${totalFcD} วัน</div></div>
@@ -6554,7 +6610,7 @@ async function loadIC(){
     <div class="ic-item" style="border-color:#ef4444"><div class="ic-label">🦠 CAUTI</div><div class="ic-value" style="color:#c62828">${s.cautiCount}</div></div>
     <div class="ic-item" style="border-color:#ef4444"><div class="ic-label">🦠 CLABSI</div><div class="ic-value" style="color:#c62828">${s.clabsiCount}</div></div>
     <div class="ic-item" style="border-color:#9c27b0"><div class="ic-label">⚠️ MDR</div><div class="ic-value" style="color:#7b1fa2">${s.mdrCount}</div></div>`;
-  destroyChart('icDevice');const _cc7=getChartColors();dashCharts.icDevice=new Chart(document.getElementById('icDeviceChart'),{type:'line',data:{labels:FY_LABELS,datasets:[{label:'Vent Days',data:vtD,borderColor:_cc7.c4,tension:0.4,pointRadius:3},{label:'A-Line',data:alD,borderColor:_cc7.c2,tension:0.4,pointRadius:3},{label:'C-Line',data:clD,borderColor:_cc7.c3,tension:0.4,pointRadius:3},{label:'F/C',data:fcD,borderColor:_cc7.c1,tension:0.4,pointRadius:3},{label:'ICD',data:icdD,borderColor:_cc7.c5,tension:0.4,pointRadius:3},{label:'DL for HD',data:dlD,borderColor:_cc7.c6||'#8e24aa',tension:0.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:9},usePointStyle:true}}},scales:{y:{beginAtZero:true,ticks:{font:{size:9}}},x:{ticks:{font:{size:9}}}}}});
+  destroyChart('icDevice');const _cc7=getChartColors();dashCharts.icDevice=new Chart(document.getElementById('icDeviceChart'),{type:'line',data:{labels:FY_LABELS,datasets:[{label:'Vent Days',data:vtD,borderColor:_cc7.c4,tension:0.4,pointRadius:3},{label:'A-Line',data:alD,borderColor:_cc7.c2,tension:0.4,pointRadius:3},{label:'C-Line',data:clD,borderColor:_cc7.c3,tension:0.4,pointRadius:3},{label:'IV',data:ivD,borderColor:_cc7.c4||'#00897b',borderDash:[5,3],tension:0.4,pointRadius:3},{label:'F/C',data:fcD,borderColor:_cc7.c1,tension:0.4,pointRadius:3},{label:'ICD',data:icdD,borderColor:_cc7.c5,tension:0.4,pointRadius:3},{label:'DL for HD',data:dlD,borderColor:_cc7.c6||'#8e24aa',tension:0.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:9},usePointStyle:true}}},scales:{y:{beginAtZero:true,ticks:{font:{size:9}}},x:{ticks:{font:{size:9}}}}}});
   destroyChart('icInfection');const _cc8=getChartColors();dashCharts.icInfection=new Chart(document.getElementById('icInfectionChart'),{type:'bar',data:{labels:['VAP','CAUTI','CLABSI','SSI','MDR'],datasets:[{label:'จำนวน (ราย)',data:[s.vapCount,s.cautiCount,s.clabsiCount,s.ssiCount,s.mdrCount],backgroundColor:[_cc8.c4,_cc8.c3,'#f44336','#e91e63',_cc8.c5],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{font:{size:10}}},x:{ticks:{font:{size:11}}}}}});
   document.getElementById('icTbl').innerHTML=!pts.length?'<tr><td colspan="16" class="loading-msg">ไม่มีข้อมูล</td></tr>':pts.map(p=>{const inf=t=>p[t]==='ใช่'?`<span class="inf-badge">✓</span>`:'-';return `<tr><td style="white-space:nowrap;font-weight:500">${p['ชื่อ-สกุล']||'-'}</td><td style="color:#00897b">${p['HN']||'-'}</td><td>${p['Ventilator (Name)']||'-'}</td><td style="text-align:center">${devDayCell(p,'Ventilator (Start)','Ventilator (End)')}</td><td style="text-align:center">${devDayCell(p,'A-Line (Start)','A-Line (End)')}</td><td style="text-align:center">${devDayCell(p,'C-Line (Start)','C-Line (End.)')}</td><td style="text-align:center">${devDayCell(p,'IV (Start)','IV (End)')}</td><td style="text-align:center">${devDayCell(p,'F/C (Start)','F/C (END)')}</td><td style="text-align:center">${devDayCell(p,'ICD (Start)','ICD (End)')}</td><td style="text-align:center">${devDayCell(p,'DL for HD (Start)','DL for HD (End)')}</td><td style="text-align:center">${inf('VAP')}</td><td style="text-align:center">${inf('CAUTI')}</td><td style="text-align:center">${inf('CLABSI')}</td><td style="text-align:center">${inf('SSI')}</td><td style="text-align:center">${p['MDR']==='ใช่'?'<span class="inf-badge" style="background:#ede7f6;color:#7b1fa2;border-color:#9c27b0">MDR</span>':'-'}</td><td style="font-size:10.5px">${p['ชนิดของเชื้อที่พบ']||'-'}</td></tr>`;}).join('');
 }

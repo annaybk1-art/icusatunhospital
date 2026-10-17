@@ -1006,7 +1006,7 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
       </div>
       <div class="ic-grid" id="icCards" style="margin-bottom:12px"></div>
       <div class="dash-grid" style="margin-bottom:14px">
-        <div class="dash-card"><div class="dash-card-title">📊 Device Days</div><div class="chart-container"><canvas id="icDeviceChart"></canvas></div></div>
+        <div class="dash-card"><div class="dash-card-title">📊 Device Days <span id="icFyLbl" style="font-size:11px;font-weight:500;color:var(--gray500)"></span></div><div class="chart-container"><canvas id="icDeviceChart"></canvas></div></div>
         <div class="dash-card"><div class="dash-card-title">🦠 การติดเชื้อ HAI</div><div class="chart-container"><canvas id="icInfectionChart"></canvas></div></div>
       </div>
       <div class="tbl-wrap">
@@ -1885,7 +1885,7 @@ function hideLoad(){document.getElementById('loadOverlay').classList.remove('ope
 // ทุกครั้งที่ปล่อยเวอร์ชันใหม่: แก้ APP_VERSION ในไฟล์นี้ และ APP_LATEST_VERSION ใน Code.gs ให้เป็นเลขเดียวกัน
 // รูปแบบ 'YYYY-MM-DD.NN' (เทียบเป็นข้อความได้ — เวอร์ชันใหม่กว่าจะมีค่ามากกว่า)
 // ============================================================
-const APP_VERSION='2026-10-17.06';
+const APP_VERSION='2026-10-17.07';
 let _updateDismissedAt=0,_lastUpdateCheck=0;
 
 async function checkAppUpdate(force=false){
@@ -6506,7 +6506,12 @@ async function loadIC(){
     <div class="ic-item" style="border-color:#ef4444"><div class="ic-label">🦠 CLABSI</div><div class="ic-value" style="color:#c62828">${s.clabsiCount}</div></div>
     <div class="ic-item" style="border-color:#9c27b0"><div class="ic-label">⚠️ MDR</div><div class="ic-value" style="color:#7b1fa2">${s.mdrCount}</div></div>`;
   showLoad('กำลังโหลด Chart...');
-  const allM=await Promise.all(Array.from({length:12},(_,i)=>fetchMonthPts(i+1,y)));hideLoad();
+  // ยอด "รวมทั้งปี" นับตามปีงบประมาณ (ต.ค.–ก.ย.) ที่เดือนที่เลือกอยู่ — เริ่มปีงบใหม่ (1 ต.ค.) นับ 0 ใหม่
+  const fyIC=m>=10?y+1:y;
+  const fyMonths=[10,11,12,1,2,3,4,5,6,7,8,9].map(mm=>({m:mm,y:mm>=10?fyIC-1:fyIC}));
+  const FY_LABELS=fyMonths.map(o=>MONTHS_TH[o.m-1]);
+  const fyLbl=document.getElementById('icFyLbl');if(fyLbl)fyLbl.textContent='(ปีงบ '+(fyIC+543)+': ต.ค.–ก.ย.)';
+  const allM=await Promise.all(fyMonths.map(o=>fetchMonthPts(o.m,o.y)));hideLoad();
   const vtD=[],alD=[],clD=[],fcD=[],icdD=[],dlD=[];allM.forEach(mp=>{vtD.push(icDays(mp,'Ventilator (Start)','Ventilator (End)'));alD.push(icDays(mp,'A-Line (Start)','A-Line (End)'));clD.push(icDays(mp,'C-Line (Start)','C-Line (End.)'));fcD.push(icDays(mp,'F/C (Start)','F/C (END)'));icdD.push(icDays(mp,'ICD (Start)','ICD (End)'));dlD.push(icDays(mp,'DL for HD (Start)','DL for HD (End)'));});
 
   // Total รวมทั้งปี
@@ -6527,29 +6532,29 @@ async function loadIC(){
   document.getElementById('icCards').innerHTML=`
     <div class="ic-item"><div class="ic-label">🫁 Ventilator</div><div class="ic-value">${s.ventCount} คน</div>
       <div class="ic-sub">เดือนนี้ <b>${monthVtD}</b> วัน</div>
-      <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมทั้งปี ${totalVtD} วัน</div></div>
+      <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมปีงบ ${fyIC+543}: ${totalVtD} วัน</div></div>
     <div class="ic-item"><div class="ic-label">💉 A-Line</div><div class="ic-value">${s.alineCount} คน</div>
       <div class="ic-sub">เดือนนี้ <b>${monthAlD}</b> วัน</div>
-      <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมทั้งปี ${totalAlD} วัน</div></div>
+      <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมปีงบ ${fyIC+543}: ${totalAlD} วัน</div></div>
     <div class="ic-item"><div class="ic-label">🔗 C-Line</div><div class="ic-value">${s.clineCount} คน</div>
       <div class="ic-sub">เดือนนี้ <b>${monthClD}</b> วัน</div>
-      <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมทั้งปี ${totalClD} วัน</div></div>
+      <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมปีงบ ${fyIC+543}: ${totalClD} วัน</div></div>
     <div class="ic-item"><div class="ic-label">🩸 IV</div><div class="ic-value">${pts.filter(p=>p['IV (Start)']).length} คน</div>
       <div class="ic-sub">เดือนนี้ <b>${icDays(pts,'IV (Start)','IV (End)')}</b> วัน</div></div>
     <div class="ic-item"><div class="ic-label">🪠 F/C</div><div class="ic-value">${s.fcCount} คน</div>
       <div class="ic-sub">เดือนนี้ <b>${monthFcD}</b> วัน</div>
-      <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมทั้งปี ${totalFcD} วัน</div></div>
+      <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมปีงบ ${fyIC+543}: ${totalFcD} วัน</div></div>
     <div class="ic-item"><div class="ic-label">🩺 ICD</div><div class="ic-value">${s.icdCount} คน</div>
       <div class="ic-sub">เดือนนี้ <b>${monthIcdD}</b> วัน</div>
-      <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมทั้งปี ${totalIcdD} วัน</div></div>
+      <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมปีงบ ${fyIC+543}: ${totalIcdD} วัน</div></div>
     <div class="ic-item"><div class="ic-label">🩸 DL for HD</div><div class="ic-value">${s.dlCount} คน</div>
       <div class="ic-sub">เดือนนี้ <b>${monthDlD}</b> วัน</div>
-      <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมทั้งปี ${totalDlD} วัน</div></div>
+      <div class="ic-sub" style="color:var(--theme-primary);font-weight:700">รวมปีงบ ${fyIC+543}: ${totalDlD} วัน</div></div>
     <div class="ic-item" style="border-color:#ef4444"><div class="ic-label">🦠 VAP</div><div class="ic-value" style="color:#c62828">${s.vapCount}</div></div>
     <div class="ic-item" style="border-color:#ef4444"><div class="ic-label">🦠 CAUTI</div><div class="ic-value" style="color:#c62828">${s.cautiCount}</div></div>
     <div class="ic-item" style="border-color:#ef4444"><div class="ic-label">🦠 CLABSI</div><div class="ic-value" style="color:#c62828">${s.clabsiCount}</div></div>
     <div class="ic-item" style="border-color:#9c27b0"><div class="ic-label">⚠️ MDR</div><div class="ic-value" style="color:#7b1fa2">${s.mdrCount}</div></div>`;
-  destroyChart('icDevice');const _cc7=getChartColors();dashCharts.icDevice=new Chart(document.getElementById('icDeviceChart'),{type:'line',data:{labels:MONTHS_TH,datasets:[{label:'Vent Days',data:vtD,borderColor:_cc7.c4,tension:0.4,pointRadius:3},{label:'A-Line',data:alD,borderColor:_cc7.c2,tension:0.4,pointRadius:3},{label:'C-Line',data:clD,borderColor:_cc7.c3,tension:0.4,pointRadius:3},{label:'F/C',data:fcD,borderColor:_cc7.c1,tension:0.4,pointRadius:3},{label:'ICD',data:icdD,borderColor:_cc7.c5,tension:0.4,pointRadius:3},{label:'DL for HD',data:dlD,borderColor:_cc7.c6||'#8e24aa',tension:0.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:9},usePointStyle:true}}},scales:{y:{beginAtZero:true,ticks:{font:{size:9}}},x:{ticks:{font:{size:9}}}}}});
+  destroyChart('icDevice');const _cc7=getChartColors();dashCharts.icDevice=new Chart(document.getElementById('icDeviceChart'),{type:'line',data:{labels:FY_LABELS,datasets:[{label:'Vent Days',data:vtD,borderColor:_cc7.c4,tension:0.4,pointRadius:3},{label:'A-Line',data:alD,borderColor:_cc7.c2,tension:0.4,pointRadius:3},{label:'C-Line',data:clD,borderColor:_cc7.c3,tension:0.4,pointRadius:3},{label:'F/C',data:fcD,borderColor:_cc7.c1,tension:0.4,pointRadius:3},{label:'ICD',data:icdD,borderColor:_cc7.c5,tension:0.4,pointRadius:3},{label:'DL for HD',data:dlD,borderColor:_cc7.c6||'#8e24aa',tension:0.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:9},usePointStyle:true}}},scales:{y:{beginAtZero:true,ticks:{font:{size:9}}},x:{ticks:{font:{size:9}}}}}});
   destroyChart('icInfection');const _cc8=getChartColors();dashCharts.icInfection=new Chart(document.getElementById('icInfectionChart'),{type:'bar',data:{labels:['VAP','CAUTI','CLABSI','SSI','MDR'],datasets:[{label:'จำนวน (ราย)',data:[s.vapCount,s.cautiCount,s.clabsiCount,s.ssiCount,s.mdrCount],backgroundColor:[_cc8.c4,_cc8.c3,'#f44336','#e91e63',_cc8.c5],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{font:{size:10}}},x:{ticks:{font:{size:11}}}}}});
   document.getElementById('icTbl').innerHTML=!pts.length?'<tr><td colspan="16" class="loading-msg">ไม่มีข้อมูล</td></tr>':pts.map(p=>{const inf=t=>p[t]==='ใช่'?`<span class="inf-badge">✓</span>`:'-';return `<tr><td style="white-space:nowrap;font-weight:500">${p['ชื่อ-สกุล']||'-'}</td><td style="color:#00897b">${p['HN']||'-'}</td><td>${p['Ventilator (Name)']||'-'}</td><td style="text-align:center">${devDayCell(p,'Ventilator (Start)','Ventilator (End)')}</td><td style="text-align:center">${devDayCell(p,'A-Line (Start)','A-Line (End)')}</td><td style="text-align:center">${devDayCell(p,'C-Line (Start)','C-Line (End.)')}</td><td style="text-align:center">${devDayCell(p,'IV (Start)','IV (End)')}</td><td style="text-align:center">${devDayCell(p,'F/C (Start)','F/C (END)')}</td><td style="text-align:center">${devDayCell(p,'ICD (Start)','ICD (End)')}</td><td style="text-align:center">${devDayCell(p,'DL for HD (Start)','DL for HD (End)')}</td><td style="text-align:center">${inf('VAP')}</td><td style="text-align:center">${inf('CAUTI')}</td><td style="text-align:center">${inf('CLABSI')}</td><td style="text-align:center">${inf('SSI')}</td><td style="text-align:center">${p['MDR']==='ใช่'?'<span class="inf-badge" style="background:#ede7f6;color:#7b1fa2;border-color:#9c27b0">MDR</span>':'-'}</td><td style="font-size:10.5px">${p['ชนิดของเชื้อที่พบ']||'-'}</td></tr>`;}).join('');
 }

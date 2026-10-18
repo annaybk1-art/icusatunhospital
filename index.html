@@ -1977,28 +1977,8 @@ function reloadForUpdate(){
   try{const u=new URL(location.href);u.searchParams.set('_v',Date.now());location.replace(u.toString());}
   catch(e){location.reload();}
 }
-// ตรวจสอบอัปเดตด้วยมือ (กดจากป้ายเวอร์ชัน) — บอกผลชัดเจนทุกกรณี ใช้ไล่ปัญหาว่าทำไมแถบแจ้งเตือนไม่ขึ้น
-async function checkAppUpdateManual(){
-  try{
-    const r=await api('getVersion');
-    const sv=String((r&&r.version)||'');
-    _lastUpdateCheck=Date.now();
-    if(sv&&sv>APP_VERSION){_updateDismissedAt=0;showUpdateBanner(r.message);toast('มีเวอร์ชันใหม่ ('+sv+')');}
-    else{hideUpdateBanner();toast('เป็นเวอร์ชันล่าสุดแล้ว (เครื่องนี้ '+APP_VERSION+' | ระบบ '+(sv||'-')+')');}
-  }catch(e){
-    const m=String((e&&e.message)||e);
-    toast(/Unknown action/i.test(m)?'ฝั่ง Code.gs ยังเป็นเวอร์ชันเก่า (ยังไม่มี getVersion) — ต้อง Deploy Code.gs ตัวใหม่':'ตรวจสอบไม่ได้: '+m,true);
-  }
-}
 function showAppVersion(){
-  document.querySelectorAll('.app-ver').forEach(e=>{
-    e.textContent='เวอร์ชัน '+APP_VERSION+' · ';
-    const a=document.createElement('span');
-    a.textContent='ตรวจสอบอัปเดต';
-    a.style.cssText='color:#1565c0;text-decoration:underline;cursor:pointer';
-    a.onclick=checkAppUpdateManual;
-    e.appendChild(a);
-  });
+  document.querySelectorAll('.app-ver').forEach(e=>{e.textContent='เวอร์ชัน '+APP_VERSION;});
 }
 showAppVersion();
 window.addEventListener('load',()=>{showAppVersion();setTimeout(()=>checkAppUpdate(true),4000);});

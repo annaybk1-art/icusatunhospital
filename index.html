@@ -1810,7 +1810,7 @@ td{padding:7px 7px;border-bottom:1px solid var(--theme-tbl-border);vertical-alig
 // ============================================================
 // CONFIG & API
 // ============================================================
-const _DEFAULT_URL='https://script.google.com/macros/s/AKfycbzU6id5z9gD8yoZvQ9XkFfvnZekOSLmd6YSa4TdCbyirnjuMODn7Ngq2a0U3MxH3564VA/exec';
+const _DEFAULT_URL='https://script.google.com/macros/s/AKfycbxQ95CItwSPxQmVonwgORWlr0Vi6zn7VNOBWh0c06ul_l-8v7YzRASpSwztBK5CGewINQ/exec';
 let API_URL = _DEFAULT_URL;
 localStorage.setItem('icu_api_url',_DEFAULT_URL);
 
@@ -1905,7 +1905,7 @@ function hideLoad(){document.getElementById('loadOverlay').classList.remove('ope
 // ทุกครั้งที่ปล่อยเวอร์ชันใหม่: แก้ APP_VERSION ในไฟล์นี้ และ APP_LATEST_VERSION ใน Code.gs ให้เป็นเลขเดียวกัน
 // รูปแบบ 'YYYY-MM-DD.NN' (เทียบเป็นข้อความได้ — เวอร์ชันใหม่กว่าจะมีค่ามากกว่า)
 // ============================================================
-const APP_VERSION='2026-10-17.10';
+const APP_VERSION='2026-10-17.11';
 let _updateDismissedAt=0,_lastUpdateCheck=0;
 
 async function checkAppUpdate(force=false){

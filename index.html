@@ -1887,14 +1887,37 @@ function flattenData(data){
   return flat;
 }
 
+// บัตรผ่านของผู้ใช้ที่ล็อกอินอยู่ (เซิร์ฟเวอร์ออกให้ตอนล็อกอิน) — ส่งใน body ของคำขอ ไม่ใส่ใน URL
+function authToken(){return (typeof currentUser!=='undefined'&&currentUser&&currentUser.token)||'';}
+let _authExpiring=false;
+// บัตรผ่านหมดอายุ/ไม่ถูกต้อง (เซิร์ฟเวอร์ตอบ AUTH_REQUIRED) → ล้างเซสชัน กลับหน้าล็อกอิน
+function handleAuthExpired(){
+  if(_authExpiring) return;
+  _authExpiring=true;
+  try{
+    sessionStorage.removeItem('icu_sess');
+    currentUser=null;_pts=[];
+    hideLoad();
+    document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open'));
+    const app=document.getElementById('appPage');if(app)app.style.display='none';
+    showLogin();
+    toast('หมดเวลาการเข้าสู่ระบบ กรุณาเข้าสู่ระบบใหม่',true);
+  }finally{setTimeout(()=>{_authExpiring=false;},1500);}
+}
 async function api(action,params={},body=null){
   if(!API_URL) throw new Error('ยังไม่ได้ตั้งค่า API URL');
   const q=new URLSearchParams({action,...params}).toString();
   const opts={method:'GET',redirect:'follow'};
-  if(body){opts.method='POST';opts.headers={'Content-Type':'text/plain'};opts.body=JSON.stringify({action,...body});}
+  const tok=authToken();
+  if(tok&&!body) body={};                       // มีบัตรผ่าน → ส่งแบบ POST เพื่อให้บัตรอยู่ใน body ไม่อยู่ใน URL
+  if(body){opts.method='POST';opts.headers={'Content-Type':'text/plain'};opts.body=JSON.stringify(tok?{action,...body,authToken:tok}:{action,...body});}
   const res=await fetch(API_URL+'?'+q,opts);
   const json=await res.json();
-  if(!json.ok) throw new Error(json.error||'API Error');
+  if(!json.ok){
+    if(json.error==='AUTH_REQUIRED'){handleAuthExpired();throw new Error('หมดเวลาการเข้าสู่ระบบ กรุณาเข้าสู่ระบบใหม่');}
+    if(json.error==='FORBIDDEN') throw new Error('ไม่มีสิทธิ์ใช้งานคำสั่งนี้');
+    throw new Error(json.error||'API Error');
+  }
   return json.data;
 }
 function showLoad(msg='กำลังโหลด...'){document.getElementById('loadMsg').textContent=msg;document.getElementById('loadOverlay').classList.add('open');}
@@ -1905,7 +1928,7 @@ function hideLoad(){document.getElementById('loadOverlay').classList.remove('ope
 // ทุกครั้งที่ปล่อยเวอร์ชันใหม่: แก้ APP_VERSION ในไฟล์นี้ และ APP_LATEST_VERSION ใน Code.gs ให้เป็นเลขเดียวกัน
 // รูปแบบ 'YYYY-MM-DD.NN' (เทียบเป็นข้อความได้ — เวอร์ชันใหม่กว่าจะมีค่ามากกว่า)
 // ============================================================
-const APP_VERSION='2026-10-17.11';
+const APP_VERSION='2026-10-17.16';
 let _updateDismissedAt=0,_lastUpdateCheck=0;
 
 async function checkAppUpdate(force=false){
@@ -2182,7 +2205,7 @@ function dcMatch(val, type){
   return false;
 }
 const TOTAL_BEDS=14;
-const OPTS_LABELS={causeOfDeath:'💀 สาเหตุการเสียชีวิต',referReason:'🚑 เหตุผลที่ต้อง Refer',beds:'🛏️ เตียง ICU',doctors:'👨‍⚕️ แพทย์เจ้าของไข้',ventilatorMode:'🌬️ การหายใจ',ventilator:'🫁 ชนิด Ventilator',rights:'💳 สิทธิ์การรักษา',patientType:'🏷️ ประเภทผู้ป่วย',drugAllergy:'💊 แพ้ยา',surgeryType:'🔪 ชนิดการผ่าตัด',diagnosis:'🔬 Diagnosis (Dx)',recorderAdmit:'📝 ผู้บันทึก Admit',recorderDC:'📝 ผู้บันทึก D/C',incharge:'👩‍⚕️ รายชื่อ In Charge',udOptions:'📋 U/D (โรคประจำตัว)',specimenType:'🧪 ชนิดสิ่งส่งตรวจ',pathogenType:'🦠 ชนิดของเชื้อที่พบ',haOptions:'💊 ยา High Alert Drug'};
+const OPTS_LABELS={causeOfDeath:'💀 สาเหตุการเสียชีวิต',referReason:'🚑 เหตุผลที่ต้อง Refer',beds:'🛏️ เตียง ICU',doctors:'👨‍⚕️ แพทย์เจ้าของไข้',ventilatorMode:'🌬️ การหายใจ',ventilator:'🫁 ชนิด Ventilator',rights:'💳 สิทธิ์การรักษา',patientType:'🏷️ ประเภทผู้ป่วย',consultDept:'🩺 แผนกที่ Consult',drugAllergy:'💊 แพ้ยา',surgeryType:'🔪 ชนิดการผ่าตัด',diagnosis:'🔬 Diagnosis (Dx)',recorderAdmit:'📝 ผู้บันทึก Admit',recorderDC:'📝 ผู้บันทึก D/C',incharge:'👩‍⚕️ รายชื่อ In Charge',udOptions:'📋 U/D (โรคประจำตัว)',specimenType:'🧪 ชนิดสิ่งส่งตรวจ',pathogenType:'🦠 ชนิดของเชื้อที่พบ',haOptions:'💊 ยา High Alert Drug'};
 const MODAL_TABS=[{id:'tab-admit',label:'📋 ข้อมูลรับ'},{id:'tab-ic',label:'🫁 IC / Ventilator'},{id:'tab-assess',label:'📊 การประเมิน'},{id:'tab-infection',label:'🦠 การติดเชื้อ'},{id:'tab-dc',label:'🚪 ข้อมูล D/C'}];
 
 let currentUser=null,_opts={},_pts=[],_filtPts=[],_curPg=1;
@@ -2210,13 +2233,15 @@ const _dashCache={};
 // INIT
 // ============================================================
 window.onload=async function(){
+  try{localStorage.removeItem('icu_users_cache');}catch(e){}   // แคชรายชื่อผู้ใช้เก่า (เคยมีรหัสผ่าน) — ล้างทิ้ง
   loadThemeFromStorage();
   loadMarqueeFromStorage();
   setTimeout(initStickyScroll, 300);
   setupYears();
   const sess=JSON.parse(sessionStorage.getItem('icu_sess')||'null');
-  if(sess&&sess.exp>Date.now()){currentUser=sess.user;await loadOpts();await loadThemeFromServer();await loadMarqueeFromServer();showApp(sess.user);}
-  else showLogin();
+  // เซสชันเก่าที่ไม่มีบัตรผ่าน (ล็อกอินก่อนอัปเดตเวอร์ชันนี้) ใช้ต่อไม่ได้ → ล้างแล้วให้ล็อกอินใหม่
+  if(sess&&sess.exp>Date.now()&&sess.user&&sess.user.token){currentUser=sess.user;await loadOpts();await loadThemeFromServer();await loadMarqueeFromServer();if(!currentUser)return;showApp(sess.user);}
+  else{if(sess)sessionStorage.removeItem('icu_sess');showLogin();}
 };
 
 let _dashMode='month'; // 'month' | 'year'
@@ -2256,7 +2281,7 @@ function setupYears(){
 }
 
 async function loadOpts(){try{_opts=await api('getOpts');}catch(e){_opts=defaultOpts();}}
-function defaultOpts(){return{causeOfDeath:['Septic shock','Respiratory failure','Cardiac arrest','MODS','Hemorrhagic shock','Neurological death','อื่นๆ'],referReason:['ขาดแคลนอุปกรณ์','ต้องการผู้เชี่ยวชาญเฉพาะทาง','ผู้ป่วยขอย้าย','ขาดเตียง ICU','อื่นๆ'],ward:['อายุรกรรม','ศัลยกรรม','กุมารเวช','สูตินรีเวช','ห้องผ่าตัด','ER','อื่นๆ'],beds:['ICU1','ICU2','ICU3','ICU4','ICU5','ICU6','ICU7','ICU8','ICU9','ICU10','ICU11','ICU12','ICU13','ICU14'],doctors:['พญ.ชัญญา มุกดารัศมี','พญ.วรรณกานต์ พัฒนโกวิท','พญ.ธมน เนียมรัตน์','พญ.จักรปาณี ตั้งสินมั่นคง','นพ.พิทวัส จินดาอิสรชัยกุล','พญ.กชมน ภู่เจริญ','นพ.ภาณุศักดิ์ หล่อตระกูลกูล','พญ.ชุตินันท์ สุปราณี','พญ.กัญญารัตน์ เลิศวาจาจา','นพ.จักรพงษ์ เทศพิทักษ์','นพ.สรวิชญ์ พุฒินาถ','นพ.วรสิทธิ์ ชัยมงคลานนท์','นพ.ภาณุพงศ์ นาคช่วย','นพ.นพเกียรติ อัครนพหงส์','นพ.เนติกรณ์ ผิวทอง','พญ.มนวดี ไชยกุล','พญ.นพวรรณ ฐิติวรการ','นพ.ภาวัฒน์ ไล่เจริญ','นพ.กรณ์ธรรม อู่ไพบูลย์สิน','นพ.กุลวิทย์ อโนทัยสถาพร','นพ.พงศกร กาญจนา','พญ.นริศรา สัณห์พานิชกิจ','นพ.วุฒิพงศ์ วิไลวรางกุล','นพ.ไพบูลย์ แสงยืยยงพิพัฒน์','พญ.ศศิพิมพ์ วรรณรัตน์','นพ.พุทธพงษ์ โฆษิตศุภกุล','พญ.วนพัชร์ ยิ้มซ้าย','นพ.มนัสนันท์ กนกทิพย์นารา','พญ.ณัฐสุดา พันธ์บุญมี','นพ.นัฐพงศ์ เด็นมะเส','พญ.นุสรา ยุทธสมภพ'],ventilatorMode:['Ventilator','HFNC','Canular','Room air','Bipap','T-piece'],ventilator:['840/2','840/3','840/4','840/5','840/6','840/7','840/8','840/9','840/10','840/11','840/12','840/13','840/14','840/15','840/22','Nihon/1','Nihon/2','Bella/1','Bella/2','Vela','Hamilton','HFNC','Canular'],rights:['กำนันผู้ใหญ่บ้านนอกเขต','UC นอกเขต','ประกันสังคม','จ่ายตรง','พ.ร.บ.ฉุกเฉิน','ผู้สูงอายุนอกเขต','ผู้สูงอายุในเขต','ผู้พิการนอกเขต','ผู้พิการในเขต','พรบ.ผู้ประสบภัยจากรถ','UC ต่างจังหวัด','บุคคลในครอบครัว อสม ในเขต','บุคคลในครอบครัว อสม นอกเขต','ชำระเงิน','ผู้มีรายได้น้อยในเขต','ต่างด้าว','สวัสดิการข้าราชการส่วนท้องถิ่น','ผู้มีรายได้น้อยนอกเขต','ภิกษุ นอกเขต','ใช้สิทธิเบิกหน่วยงานต้นสังกัด','บัตรสุขภาพ ผสส.อสม.ในเขต','ประกันสังคมโรงพยาบาลสตูล','ทหารผ่านศึก'],haOptions:['Adrenaline','Adenosine','Dopamine','Dobutamine','NorE (Norepinephrine)','Amiodarone','Chloral hydrate syrup','Digoxin','Esmolol','Magnesium sulfate','Midazolam','Fentanyl','Morphine','Pethidine','Phenytoin inj (Dilantin)','KCL/K2HPO4','Warfarin tab','Alteplase inj','SK inj (Streptokinase)','Nicardipine','Nitroglycerine','Regular insulin','NPH insulin','Insulin glargine','3% NaCl inj.','10% MgSO4 inj.','Clozapine tablet'],patientType:['MED','SURG','Neuro Surg.','Ortho','OB','Gyne','PEDS','Maxillo','ENT','Plastic','Trauma','ER'],drugAllergy:['ไม่มี','Penicillin','Sulfa','NSAIDs','Contrast'],surgeryType:['ไม่ได้ผ่าตัด','Craniotomy','Craniectomy','VP Shunt','EVD Insertion','Laparotomy','Appendectomy','Cholecystectomy','Hernia repair','Fracture fixation','Amputation','Tracheostomy','CABG','Valve replacement','Hysterectomy','C-Section','Splenectomy','Bowel resection','Debridement','Wound closure'],diagnosis:['Sepsis','Septic shock','Pneumonia','ARDS','CHF','CVA','DKA','CKD','Trauma','Post-op','Respiratory failure','Stroke','ICH','TBI','SAH','SDH','Meningitis','Encephalitis','Seizure','NSTEMI','STEMI','AF','PE','DVT','UGIB','LGIB','Pancreatitis','Cirrhosis','AKI','Peritonitis','Burn','Polytrauma','Eclampsia','PPH','Ectopic pregnancy','Hypertensive emergency','Thyroid storm','Hypoglycemia','Rhabdomyolysis','Cardiac arrest','Cardiogenic shock','Hypovolemic shock','Hemorrhagic shock','Anaphylaxis','Obstructive shock','Drowning','Snake bite','Drug overdose','Hanging'],recorderAdmit:['พว.รัศมี','พว.สุมณฑา','พว.ฮาบีด๊ะ','พว.เพ็ญทิพย์','พว.อุไรรัตน์','พว.อุรุณโรจน์','พว.ฟาดีละฮ์','พว.รอหนา','พว.สิริลักษณ์','พว.รูวัยดา','พว.สุรัสวดี','พว.อารียา','พว.ราโมนา','พว.อารีนา','พว.ฮูดีญา','พว.นติยา','พว.กิ่งกาญจน์','พว.นาดียา','พว.มุซิรา','พว.พิมพ์มาดา','พว.จันทร์จิรา','พว.จิราลักษณ์','พว.สุรัยยา','พว.นุสรีน','พว.ตัซนีม'],
+function defaultOpts(){return{causeOfDeath:['Septic shock','Respiratory failure','Cardiac arrest','MODS','Hemorrhagic shock','Neurological death','อื่นๆ'],referReason:['ขาดแคลนอุปกรณ์','ต้องการผู้เชี่ยวชาญเฉพาะทาง','ผู้ป่วยขอย้าย','ขาดเตียง ICU','อื่นๆ'],ward:['อายุรกรรม','ศัลยกรรม','กุมารเวช','สูตินรีเวช','ห้องผ่าตัด','ER','อื่นๆ'],beds:['ICU1','ICU2','ICU3','ICU4','ICU5','ICU6','ICU7','ICU8','ICU9','ICU10','ICU11','ICU12','ICU13','ICU14'],doctors:['พญ.ชัญญา มุกดารัศมี','พญ.วรรณกานต์ พัฒนโกวิท','พญ.ธมน เนียมรัตน์','พญ.จักรปาณี ตั้งสินมั่นคง','นพ.พิทวัส จินดาอิสรชัยกุล','พญ.กชมน ภู่เจริญ','นพ.ภาณุศักดิ์ หล่อตระกูลกูล','พญ.ชุตินันท์ สุปราณี','พญ.กัญญารัตน์ เลิศวาจาจา','นพ.จักรพงษ์ เทศพิทักษ์','นพ.สรวิชญ์ พุฒินาถ','นพ.วรสิทธิ์ ชัยมงคลานนท์','นพ.ภาณุพงศ์ นาคช่วย','นพ.นพเกียรติ อัครนพหงส์','นพ.เนติกรณ์ ผิวทอง','พญ.มนวดี ไชยกุล','พญ.นพวรรณ ฐิติวรการ','นพ.ภาวัฒน์ ไล่เจริญ','นพ.กรณ์ธรรม อู่ไพบูลย์สิน','นพ.กุลวิทย์ อโนทัยสถาพร','นพ.พงศกร กาญจนา','พญ.นริศรา สัณห์พานิชกิจ','นพ.วุฒิพงศ์ วิไลวรางกุล','นพ.ไพบูลย์ แสงยืยยงพิพัฒน์','พญ.ศศิพิมพ์ วรรณรัตน์','นพ.พุทธพงษ์ โฆษิตศุภกุล','พญ.วนพัชร์ ยิ้มซ้าย','นพ.มนัสนันท์ กนกทิพย์นารา','พญ.ณัฐสุดา พันธ์บุญมี','นพ.นัฐพงศ์ เด็นมะเส','พญ.นุสรา ยุทธสมภพ'],ventilatorMode:['Ventilator','HFNC','Canular','Room air','Bipap','T-piece'],ventilator:['840/2','840/3','840/4','840/5','840/6','840/7','840/8','840/9','840/10','840/11','840/12','840/13','840/14','840/15','840/22','Nihon/1','Nihon/2','Bella/1','Bella/2','Vela','Hamilton','HFNC','Canular'],rights:['กำนันผู้ใหญ่บ้านนอกเขต','UC นอกเขต','ประกันสังคม','จ่ายตรง','พ.ร.บ.ฉุกเฉิน','ผู้สูงอายุนอกเขต','ผู้สูงอายุในเขต','ผู้พิการนอกเขต','ผู้พิการในเขต','พรบ.ผู้ประสบภัยจากรถ','UC ต่างจังหวัด','บุคคลในครอบครัว อสม ในเขต','บุคคลในครอบครัว อสม นอกเขต','ชำระเงิน','ผู้มีรายได้น้อยในเขต','ต่างด้าว','สวัสดิการข้าราชการส่วนท้องถิ่น','ผู้มีรายได้น้อยนอกเขต','ภิกษุ นอกเขต','ใช้สิทธิเบิกหน่วยงานต้นสังกัด','บัตรสุขภาพ ผสส.อสม.ในเขต','ประกันสังคมโรงพยาบาลสตูล','ทหารผ่านศึก'],haOptions:['Adrenaline','Adenosine','Dopamine','Dobutamine','NorE (Norepinephrine)','Amiodarone','Chloral hydrate syrup','Digoxin','Esmolol','Magnesium sulfate','Midazolam','Fentanyl','Morphine','Pethidine','Phenytoin inj (Dilantin)','KCL/K2HPO4','Warfarin tab','Alteplase inj','SK inj (Streptokinase)','Nicardipine','Nitroglycerine','Regular insulin','NPH insulin','Insulin glargine','3% NaCl inj.','10% MgSO4 inj.','Clozapine tablet'],patientType:['MED','SURG','Neuro Surg.','Ortho','OB','Gyne','PEDS','Maxillo','ENT','Plastic','Trauma','ER'],consultDept:['MED','SURG','Neuro Surg.','Ortho','OB','Gyne','PEDS','Maxillo','ENT','Plastic','Trauma','ER','GI'],consultDoctors:[],drugAllergy:['ไม่มี','Penicillin','Sulfa','NSAIDs','Contrast'],surgeryType:['ไม่ได้ผ่าตัด','Craniotomy','Craniectomy','VP Shunt','EVD Insertion','Laparotomy','Appendectomy','Cholecystectomy','Hernia repair','Fracture fixation','Amputation','Tracheostomy','CABG','Valve replacement','Hysterectomy','C-Section','Splenectomy','Bowel resection','Debridement','Wound closure'],diagnosis:['Sepsis','Septic shock','Pneumonia','ARDS','CHF','CVA','DKA','CKD','Trauma','Post-op','Respiratory failure','Stroke','ICH','TBI','SAH','SDH','Meningitis','Encephalitis','Seizure','NSTEMI','STEMI','AF','PE','DVT','UGIB','LGIB','Pancreatitis','Cirrhosis','AKI','Peritonitis','Burn','Polytrauma','Eclampsia','PPH','Ectopic pregnancy','Hypertensive emergency','Thyroid storm','Hypoglycemia','Rhabdomyolysis','Cardiac arrest','Cardiogenic shock','Hypovolemic shock','Hemorrhagic shock','Anaphylaxis','Obstructive shock','Drowning','Snake bite','Drug overdose','Hanging'],recorderAdmit:['พว.รัศมี','พว.สุมณฑา','พว.ฮาบีด๊ะ','พว.เพ็ญทิพย์','พว.อุไรรัตน์','พว.อุรุณโรจน์','พว.ฟาดีละฮ์','พว.รอหนา','พว.สิริลักษณ์','พว.รูวัยดา','พว.สุรัสวดี','พว.อารียา','พว.ราโมนา','พว.อารีนา','พว.ฮูดีญา','พว.นติยา','พว.กิ่งกาญจน์','พว.นาดียา','พว.มุซิรา','พว.พิมพ์มาดา','พว.จันทร์จิรา','พว.จิราลักษณ์','พว.สุรัยยา','พว.นุสรีน','พว.ตัซนีม'],
 incharge:['พว.รัศมี','พว.สุมณฑา','พว.ฮาบีด๊ะ','พว.เพ็ญทิพย์','พว.อุไรรัตน์','พว.อุรุณโรจน์','พว.ฟาดีละฮ์','พว.รอหนา','พว.สิริลักษณ์','พว.รูวัยดา','พว.สุรัสวดี','พว.อารียา','พว.ราโมนา','พว.อารีนา','พว.ฮูดีญา','พว.นติยา','พว.กิ่งกาญจน์','พว.นาดียา','พว.มุซิรา','พว.พิมพ์มาดา','พว.จันทร์จิรา','พว.จิราลักษณ์','พว.สุรัยยา','พว.นุสรีน','พว.ตัซนีม'],recorderDC:['พว.รัศมี','พว.สุมณฑา','พว.ฮาบีด๊ะ','พว.เพ็ญทิพย์','พว.อุไรรัตน์','พว.อุรุณโรจน์','พว.ฟาดีละฮ์','พว.รอหนา','พว.สิริลักษณ์','พว.รูวัยดา','พว.สุรัสวดี','พว.อารียา','พว.ราโมนา','พว.อารีนา','พว.ฮูดีญา','พว.นติยา','พว.กิ่งกาญจน์','พว.นาดียา','พว.มุซิรา','พว.พิมพ์มาดา','พว.จันทร์จิรา','พว.จิราลักษณ์','พว.สุรัยยา','พว.นุสรีน','พว.ตัซนีม'],udOptions:['ไม่มี','ปฏิเสธ','HT','IHD','MI','CHF','VHD','AF','VT','SVT','CAD','DLP','CVA','TIA','Stroke','NSTEMI','STEMI','LBBB','MR','MS','DCM','TVD','Old MI','VSD','HFpEF','HFrEF','ICM','Asthma','COPD','Pulmonary tuberculosis','OSA','old TB','Pulmonary fibrosis','DM','Hypothyroid','Hyperthyroid','CKD','ESRD','Obesity','Gout','ภูมิแพ้','Urolithiasis','BPH','Cirrhosis','Chronic Hep B','Chronic Hep C','HCV','PUD','Cholelithiasis','HCC','GERD','Epilepsy','Parkinson','MG','Dementia','Alzheimer','CVST','Anemia','Leukemia','Thrombocytopenia','Lymphoma','HIV','AIDS','SLE','RA','Autoimmune','Pancytopenia','Thalassemia','OA','Rheumatoid arthritis','Osteoporosis','Degenerative spine','MDD','Anxiety','Bipolar','Schizophrenia','Old CVA','Trauma','CA thyroid','ESRD on CAPD','ESRD on AVF','CA cecum','CA lung','CA Breast','CA colon','CA cervix','CA Floor of mouth','CA Sigmoid','CA esophagus','CA Prostate','CA Liver','brain tumor','ITP','AVM','Glaucoma','TB lung','AAA','APS','CBD Stone','Nephrotic syndrome','Thyroid mass'],specimenType:['Sputum Culture','Pus Culture','Hemoculture ขวด 1','Hemoculture ขวด 2','Hemoculture x 2','Pleural fluid Culture','Urine Culture','Stool Culture','BAL Culture','CSF Culture','Wound Culture','Tracheal aspirate Culture'],pathogenType:['A.baum CRAB_PXDR','A.baum CRE_PXDR','A.baum MDR','E.Coli MDR','K.P. CRE_PXDR','K.P. CRAB_PXDR','K.P. MDR','Pseudomonas a. CRAB_PXDR','Pseudomonas a. CRE_PXDR','Pseudomonas a. MDR','Proteus species CRE_PXDR','MRSA','MSSA','VRE','Candida species','Klebsiella pneumoniae','Escherichia coli','Staphylococcus aureus','Streptococcus pneumoniae']};}
 function o(k){return(_opts[k]||defaultOpts()[k]||[]);}
 
@@ -2324,6 +2349,7 @@ async function doLogin(){
   try{
     try{await api('init');}catch(e){}
     const user=await api('login',{},{username:u,password:p});
+    currentUser=user;                      // ต้องตั้งก่อน เพื่อให้คำขอถัดไปแนบบัตรผ่านไปด้วย
     errEl.style.display='none';
     try{await api('writeLog',{},{user:user.fullname,action:'เข้าสู่ระบบ'});}catch(e){}
     sessionStorage.setItem('icu_sess',JSON.stringify({user,exp:Date.now()+8*3600*1000}));
@@ -2568,8 +2594,7 @@ async function loadLog(){
     // โหลด admin list ถ้ายังไม่มี
     if(!_adminUsernames.length){
       try{
-        const users=await api('getUsers');
-        _adminUsernames=(users||[]).filter(u=>u.role==='admin').map(u=>u.fullname||u.username);
+        _adminUsernames=(await api('getAdminNames'))||[];
       }catch(e){}
     }
     const logs=await api('getLog');
@@ -3228,7 +3253,7 @@ async function doRNLogin(){
   errEl.style.display='none';
   showLoad('กำลังเข้าสู่ระบบ...');
   try{
-    const res=await api('login',{username:uname,password:pwd},null);
+    const res=await api('login',{},{username:uname,password:pwd});
     if(!res||res.status!=='approved') throw new Error('บัญชีนี้ยังไม่ได้รับการอนุมัติ');
     _rnUser=res;
     document.getElementById('rnWelcomeName').textContent=res.fullname||res.username;
@@ -4456,9 +4481,15 @@ function buildForm(p){
       <div class="fsec"><div class="fsec-title">โรคประจำตัว (U/D) <span class="req">*</span> <span style="font-size:10px;color:var(--gray400);font-weight:400">เลือกได้หลายตัว (ถ้าไม่มีให้เลือก "ไม่มี")</span></div>
         ${multiSel('U/D',o('udOptions'),p['U/D'],'udOptions')}
       </div>
-      <div class="fsec"><div class="fsec-title">การผ่าตัด & แพ้ยา</div><div class="fgrid">
-        ${fg('ผ่าตัด',sel('ผ่าตัด',['Yes','No'],p['ผ่าตัด']),'','',true)}
-        ${fg('ชนิดการผ่าตัด',sel('ชนิดการผ่าตัด',o('surgeryType'),p['ชนิดการผ่าตัด'],'surgeryType'),true)}
+      <div class="fsec"><div class="fsec-title">Consult / การผ่าตัด & แพ้ยา</div><div class="fgrid">
+        ${fg('มีแผนกที่ Consult ใช่หรือไม่',`<select name="มีแผนกที่ Consult" style="width:100%" onchange="onConsultToggle()"><option value="">-- เลือก --</option><option value="Yes"${p['มีแผนกที่ Consult']==='Yes'?' selected':''}>Yes</option><option value="No"${p['มีแผนกที่ Consult']==='No'?' selected':''}>No</option></select>`,'','',true)}
+        <div class="fg full" id="consultWrap" style="display:none"><label>แผนกที่ Consult และแพทย์ที่ Consult <span class="req"> *</span> <span class="auto-badge">เพิ่มได้หลายแผนก</span></label>
+          <div id="consultBox"></div>
+          <input type="hidden" name="แผนกที่ Consult" value="${esc(p['แผนกที่ Consult']||'')}">
+          <input type="hidden" name="แพทย์ที่ Consult" value="${esc(p['แพทย์ที่ Consult']||'')}">
+        </div>
+        ${fg('ผ่าตัด',`<select name="ผ่าตัด" style="width:100%" onchange="onSurgeryChange()"><option value="">-- เลือก --</option><option value="Yes"${p['ผ่าตัด']==='Yes'?' selected':''}>Yes</option><option value="No"${p['ผ่าตัด']==='No'?' selected':''}>No</option></select>`,'','',true)}
+        <div class="fg full" id="surgTypesBox" style="display:none"><label>ชนิดการผ่าตัด และวันที่ผ่าตัด<span class="req"> *</span></label><div id="surgTypesList"></div><button type="button" class="btn btn-outline btn-sm" id="surgAddBtn" onclick="surgAddRow()">➕ เพิ่มครั้งที่ผ่าตัด</button><input type="hidden" name="ชนิดการผ่าตัด" value="${esc(p['ชนิดการผ่าตัด']||'')}"><input type="hidden" name="วันที่ผ่าตัด" value="${esc(p['วันที่ผ่าตัด']||'')}"></div>
         ${fg('แพ้ยา',sel('แพ้ยา',o('drugAllergy'),p['แพ้ยา'],'drugAllergy'))}
       </div></div>`,
     'tab-dc':`
@@ -4568,7 +4599,7 @@ function buildForm(p){
     'C-Line (End.)','C-Line (day)','F/C (Start)','F/C (END)','F/C (day)',
     'ICD (Start)','ICD (End)','ICD (day)','DL for HD (Start)','DL for HD (End)','DL for HD (day)','Falling','APACHE II','Pain score',
     'VAP','CAUTI','CLABSI','SSI','MDR','ชนิดของเชื้อที่พบ','ชนิดสิ่งส่งตรวจ',
-    'CPR','Palliative','ผ่าตัด','ชนิดการผ่าตัด','แพ้ยา','ยา HD','SOS Score','ประเภทผู้ป่วย ICU',
+    'CPR','Palliative','มีแผนกที่ Consult','แผนกที่ Consult','แพทย์ที่ Consult','ผ่าตัด','จำนวนครั้งผ่าตัด','ชนิดการผ่าตัด','วันที่ผ่าตัด','แพ้ยา','ยา HD','SOS Score','ประเภทผู้ป่วย ICU',
     'การหายใจ','dxSpecialType','nurseInCharge','IV (Start)','IV (End)','IV (day)','หมายเหตุ',
     'Pressure Injury','Pressure Injury Date','Unplanned Extubation','Unplanned Extubation Date',
     'Medication Error','Medication Error Date','Medication Error Type','ICDSC Score',
@@ -4591,7 +4622,158 @@ function buildForm(p){
   }
 
   document.getElementById('modalBd').innerHTML=MODAL_TABS.map((t,i)=>`<div class="modal-panel${i===0?' active':''}" id="${t.id}">${panels[t.id]||''}</div>`).join('');
-  setTimeout(()=>{setupAutoCalc();if(isDC)onStatusChange('จำหน่ายแล้ว');document.addEventListener('click',function h(e){if(!e.target.closest('.msd-wrap'))document.querySelectorAll('.msd-list.open').forEach(l=>l.classList.remove('open'));});},50);
+  setTimeout(()=>{setupAutoCalc();initConsultSurgery();if(isDC)onStatusChange('จำหน่ายแล้ว');document.addEventListener('click',function h(e){if(!e.target.closest('.msd-wrap'))document.querySelectorAll('.msd-list.open').forEach(l=>l.classList.remove('open'));});},50);
+}
+
+// ============================================================
+// CONSULT (หลายแผนก/แพทย์) + การผ่าตัดหลายครั้ง — ในฟอร์มเพิ่ม/แก้ไขผู้ป่วย
+//   เก็บลงชีต: "แผนกที่ Consult" และ "แพทย์ที่ Consult" (รายการเรียงคู่กัน คั่นด้วย ", " แพทย์ที่ไม่ระบุ = "-")
+//              "จำนวนครั้งผ่าตัด" และ "ชนิดการผ่าตัด" (ทุกครั้งต่อกันด้วย ", " — คอลัมน์เดิม สถิติเดิมนับได้เหมือนเดิม)
+// ============================================================
+const CONSULT_MAX=6,SURG_MAX=10;
+let _surgDirty=false,_consultDirty=false;
+const _ha=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const _ht=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const _mf=n=>document.querySelector('#modalBd [name="'+n+'"]');
+
+function consultDoctorsFor(dept){
+  const m=(o('consultDoctors')||[]).filter(x=>String(x).indexOf(dept+'|')===0).map(x=>String(x).slice(dept.length+1));
+  return m.length?m:(o('doctors')||[]);       // แผนกที่ยังไม่ได้ผูกแพทย์ → แสดงแพทย์ทั้งหมด (ไม่มีข้อความแจ้ง)
+}
+function consultDeptOptions(sel){
+  const list=(o('consultDept')||[]).slice();
+  if(sel&&list.indexOf(sel)<0) list.unshift(sel);
+  return '<option value="">-- เลือกแผนก --</option>'+list.map(d=>`<option value="${_ha(d)}"${d===sel?' selected':''}>${_ht(d)}</option>`).join('');
+}
+function consultDocOptions(dept,sel){
+  const list=consultDoctorsFor(dept).slice();
+  if(sel&&list.indexOf(sel)<0) list.unshift(sel);
+  return '<option value="">-- เลือกแพทย์ --</option>'+list.map(d=>`<option value="${_ha(d)}"${d===sel?' selected':''}>${_ht(d)}</option>`).join('');
+}
+function consultRowHtml(d,p,canDelete){
+  return `<div class="cs-row" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+    <div style="flex:1;min-width:150px"><select class="cs-dept" onchange="consultDeptChange(this)" style="width:100%">${consultDeptOptions(d)}</select></div>
+    <div style="flex:1;min-width:170px"><select class="cs-doc" onchange="consultTouched()" style="width:100%">${consultDocOptions(d,p)}</select></div>
+    ${canDelete?'<button type="button" class="btn btn-danger btn-sm" style="flex-shrink:0" title="ลบแถวนี้" onclick="consultRemove(this)">🗑️</button>':''}</div>`;
+}
+function consultReadRows(){
+  return Array.from(document.querySelectorAll('#consultBox .cs-row')).map(r=>({d:r.querySelector('.cs-dept').value,p:r.querySelector('.cs-doc').value}));
+}
+function consultRender(rows){
+  const box=document.getElementById('consultBox');if(!box)return;
+  if(!rows.length)rows=[{d:'',p:''}];
+  box.innerHTML='<div id="consultRows">'+rows.map(r=>consultRowHtml(r.d,r.p,rows.length>1)).join('')+'</div><button type="button" class="btn btn-outline btn-sm" id="consultAddBtn" onclick="consultAdd()"'+(rows.length>=CONSULT_MAX?' style="display:none"':'')+'>➕ เพิ่ม Consult</button>';
+  consultSync();
+}
+function consultSync(){
+  const rows=consultReadRows().filter(r=>r.d);
+  const hd=_mf('แผนกที่ Consult'),hp=_mf('แพทย์ที่ Consult');
+  if(hd)hd.value=rows.map(r=>r.d).join(', ');
+  if(hp)hp.value=rows.map(r=>r.p||'-').join(', ');
+}
+function consultTouched(){_consultDirty=true;consultSync();}
+function consultAdd(){_consultDirty=true;const rows=consultReadRows();if(rows.length>=CONSULT_MAX)return;rows.push({d:'',p:''});consultRender(rows);}
+function consultRemove(btn){
+  _consultDirty=true;
+  const rows=consultReadRows(),idx=Array.from(document.querySelectorAll('#consultBox .cs-row')).indexOf(btn.closest('.cs-row'));
+  if(idx>=0)rows.splice(idx,1);
+  consultRender(rows);
+}
+function consultDeptChange(sel){
+  _consultDirty=true;
+  const row=sel.closest('.cs-row'),d=sel.value,docSel=row.querySelector('.cs-doc'),cur=docSel.value;
+  docSel.innerHTML=consultDocOptions(d,cur&&consultDoctorsFor(d).indexOf(cur)>=0?cur:'');
+  consultSync();
+}
+// มีแผนกที่ Consult ใช่หรือไม่ → Yes: แสดงช่องแผนก/แพทย์ | No: ซ่อนและล้างค่า
+function onConsultToggle(){
+  _consultDirty=true;
+  const sel=_mf('มีแผนกที่ Consult'),yes=sel&&sel.value==='Yes';
+  document.getElementById('consultWrap').style.display=yes?'':'none';
+  if(yes){const rows=consultReadRows();consultRender(rows.length?rows:[{d:'',p:''}]);}
+  else{const box=document.getElementById('consultBox');if(box)box.innerHTML='';const hd=_mf('แผนกที่ Consult'),hp=_mf('แพทย์ที่ Consult');if(hd)hd.value='';if(hp)hp.value='';}
+}
+function consultParse(depts,docs){
+  const d=String(depts||'').split(', ').map(x=>x.trim()).filter(Boolean),p=String(docs||'').split(', ').map(x=>x.trim());
+  return d.map((x,i)=>({d:x,p:(p[i]&&p[i]!=='-')?p[i]:''}));
+}
+
+// ── การผ่าตัดหลายครั้ง: แต่ละครั้งมี "ชนิดการผ่าตัด" + "วันที่ผ่าตัด" (กด เพิ่มครั้งที่ผ่าตัด เพื่อเพิ่มครั้งถัดไป) ──
+//   เก็บในชีต: ชนิดการผ่าตัด = "A, B"  วันที่ผ่าตัด = "2026-10-05, 2026-10-07" (เรียงคู่กัน ค.ศ. วันที่ไม่ทราบ = "-")
+function surgTypeOptions(sel){
+  const list=(o('surgeryType')||[]).filter(v=>v!=='ไม่ได้ผ่าตัด');
+  if(sel&&list.indexOf(sel)<0) list.unshift(sel);
+  return '<option value="">-- เลือกชนิดการผ่าตัด --</option>'+list.map(v=>`<option value="${_ha(v)}"${v===sel?' selected':''}>${_ht(v)}</option>`).join('');
+}
+function surgRowHtml(i,t,d,canDelete){
+  return `<div class="sg-row" style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-bottom:6px"><span style="flex-shrink:0;font-size:12px;font-weight:700;color:var(--gray600);min-width:70px">ครั้งที่ ${i}</span><select class="sg-type" onchange="surgTypeChange()" style="flex:1 1 150px;min-width:0">${surgTypeOptions(t)}</select><button type="button" class="btn btn-outline btn-sm" style="flex-shrink:0;padding:0 9px;min-width:32px" title="เพิ่มชนิดการผ่าตัดใหม่ (รออนุมัติ)" onclick="surgAddType(this)">＋</button><input type="date" class="sg-date" value="${_ha(d||'')}" max="${localToday()}" title="วันที่ผ่าตัด" onchange="surgTypeChange()" style="flex:0 0 160px;min-width:140px">${canDelete?'<button type="button" class="btn btn-danger btn-sm" style="flex-shrink:0" title="ลบครั้งนี้" onclick="surgRemoveRow(this)">🗑️</button>':''}</div>`;
+}
+function surgReadRows(){
+  return Array.from(document.querySelectorAll('#surgTypesList .sg-row')).map(r=>({t:r.querySelector('.sg-type').value,d:(r.querySelector('input[type="date"].sg-date')||{}).value||''}));
+}
+function surgRender(rows){
+  const l=document.getElementById('surgTypesList');if(!l)return;
+  if(!rows.length)rows=[{t:'',d:''}];
+  l.innerHTML=rows.map((r,i)=>surgRowHtml(i+1,r.t,r.d,rows.length>1)).join('');
+  const b=document.getElementById('surgAddBtn');if(b)b.style.display=rows.length>=SURG_MAX?'none':'';
+  surgSync();
+}
+function surgSync(){
+  const rows=surgReadRows().filter(r=>r.t);
+  const ht=_mf('ชนิดการผ่าตัด'),hd=_mf('วันที่ผ่าตัด');
+  if(ht)ht.value=rows.map(r=>r.t).join(', ');
+  if(hd)hd.value=rows.map(r=>r.d||'-').join(', ');
+}
+function surgTypeChange(){_surgDirty=true;surgSync();}
+function surgAddRow(){_surgDirty=true;const v=surgReadRows();if(v.length>=SURG_MAX)return;v.push({t:'',d:''});surgRender(v);}
+function surgRemoveRow(btn){
+  _surgDirty=true;
+  const rows=Array.from(document.querySelectorAll('#surgTypesList .sg-row')),idx=rows.indexOf(btn.closest('.sg-row'));
+  const v=surgReadRows();if(idx>=0)v.splice(idx,1);
+  surgRender(v);
+}
+function onSurgeryChange(){
+  _surgDirty=true;
+  const sel=_mf('ผ่าตัด'),yes=sel&&sel.value==='Yes';
+  document.getElementById('surgTypesBox').style.display=yes?'':'none';
+  if(yes){const v=surgReadRows();surgRender(v.length?v:[{t:'',d:''}]);}
+  else{
+    const l=document.getElementById('surgTypesList');if(l)l.innerHTML='';
+    const ht=_mf('ชนิดการผ่าตัด'),hd=_mf('วันที่ผ่าตัด');if(ht)ht.value='';if(hd)hd.value='';
+  }
+}
+async function surgAddType(btn){
+  const v=await showInlinePrompt('เพิ่มชนิดการผ่าตัดใหม่:');
+  if(!v||!v.trim())return;
+  const t=v.trim();
+  if(!_opts.surgeryType)_opts.surgeryType=(o('surgeryType')||[]).slice();
+  if(_opts.surgeryType.indexOf(t)>=0){toast('มีรายการนี้อยู่แล้ว');}
+  else{
+    _opts.surgeryType.push(t);
+    try{await api('submitPendingOpt',{},{optKey:'surgeryType',value:t,submittedBy:currentUser?.fullname||''});toast('เพิ่ม "'+t+'" แล้ว — ใช้ได้ทันที (รอ Admin อนุมัติ) ✓');}
+    catch(e){toast('เพิ่มลงฟอร์มแล้ว แต่ส่งคำขออนุมัติไม่สำเร็จ: '+e.message,true);}
+  }
+  const rows=surgReadRows(),idx=Array.from(document.querySelectorAll('#surgTypesList .sg-row')).indexOf(btn.closest('.sg-row'));
+  if(idx>=0)rows[idx].t=t;
+  _surgDirty=true;
+  surgRender(rows);
+}
+function initConsultSurgery(){
+  _surgDirty=false;_consultDirty=false;
+  const h1=_mf('แผนกที่ Consult'),h2=_mf('แพทย์ที่ Consult'),cq=_mf('มีแผนกที่ Consult');
+  if(!h1||!cq)return;
+  const crow=consultParse(h1.value,h2.value);
+  if(!cq.value&&crow.length)cq.value='Yes';          // ข้อมูลที่บันทึกไว้ก่อนมีคำถามนี้ → ถือว่า Yes
+  if(cq.value==='Yes'){document.getElementById('consultWrap').style.display='';consultRender(crow.length?crow:[{d:'',p:''}]);}
+  const sel=_mf('ผ่าตัด'),hs=_mf('ชนิดการผ่าตัด'),hd=_mf('วันที่ผ่าตัด');
+  if(sel&&sel.value==='Yes'){
+    document.getElementById('surgTypesBox').style.display='';
+    const origT=hs.value,origD=hd?hd.value:'';
+    const types=String(origT||'').split(', ').map(x=>x.trim()).filter(Boolean).slice(0,SURG_MAX);
+    const dates=String(origD||'').split(', ').map(x=>x.trim());
+    surgRender(types.length?types.map((t,i)=>({t,d:(dates[i]&&dates[i]!=='-')?dates[i]:''})):[{t:'',d:''}]);
+    hs.value=origT;if(hd)hd.value=origD;   // ข้อมูลเดิมที่ยังไม่ได้แก้ คงค่าเดิมไว้ ไม่เติม "-" ให้
+  }
 }
 
 function onPressureInjuryChange(v){const b=document.getElementById('piDateBox');if(b)b.style.display=v==='Yes'?'contents':'none';}
@@ -4844,6 +5026,24 @@ async function savePatient(){
   const missing=Object.entries(baseReq).filter(([k])=>!data[k]).map(([,v])=>v);
   // บังคับ Apache IV เฉพาะตอนเพิ่มใหม่
   if(missing.length){toast('กรุณากรอก: '+missing.join(', '),true);return;}
+  // ── Consult: ต้องตอบว่ามีแผนกที่ Consult หรือไม่ (ผู้ป่วยใหม่ หรือเมื่อมีการแก้ส่วนนี้) ถ้า Yes ต้องเลือกแผนกและแพทย์ให้ครบทุกแถว ──
+  if(!editPtId||_consultDirty){
+    if(!data['มีแผนกที่ Consult']){toast('กรุณาเลือก: มีแผนกที่ Consult ใช่หรือไม่',true);return;}
+    if(data['มีแผนกที่ Consult']==='Yes'){
+      const cr=consultReadRows();
+      if(!cr.length||cr.some(r=>!r.d||!r.p)){toast('กรุณาเลือกแผนกและแพทย์ที่ Consult ให้ครบทุกแถว (หรือกด 🗑️ ลบแถวที่ไม่ใช้)',true);return;}
+    }else{data['แผนกที่ Consult']='';data['แพทย์ที่ Consult']='';}
+  }
+  // ── การผ่าตัดหลายครั้ง: ผ่าตัด=Yes ต้องเลือกชนิดและวันที่ผ่าตัดให้ครบทุกครั้งที่เพิ่มไว้ (ตอนเพิ่มใหม่ หรือเมื่อมีการแก้ส่วนนี้) ──
+  if(data['ผ่าตัด']==='Yes'){
+    if(!editPtId||_surgDirty){
+      const sr=surgReadRows();
+      if(!sr.length||sr.every(r=>!r.t&&!r.d)){toast('กรุณาเลือกชนิดและวันที่ผ่าตัด',true);return;}
+      if(sr.some(r=>!r.t||!r.d)){toast('กรุณาเลือกชนิดและวันที่ผ่าตัดให้ครบทุกครั้ง (หรือกด 🗑️ ลบครั้งที่ไม่ใช้)',true);return;}
+      const todayS=localToday();
+      if(sr.some(r=>r.d>todayS||parseInt(r.d)<1900)){toast('วันที่ผ่าตัดไม่ถูกต้อง (เป็นวันในอนาคต หรือปีผิดปกติ)',true);return;}
+    }
+  }else if(!editPtId||_surgDirty){data['ชนิดการผ่าตัด']='';data['วันที่ผ่าตัด']='';}
   // ตรวจสอบวันที่ Admit ว่าตรงกับเดือน/ปีที่เลือกไหม
   if(data['Admit (Date)']){
     const admitD=new Date(data['Admit (Date)']);
@@ -5519,8 +5719,55 @@ function saveApiUrlFromOpts(){
 
 function renderOpts(){
   if(!requireAdmin())return;
-  document.getElementById('optsEditor').innerHTML=Object.entries(OPTS_LABELS).map(([key,label])=>`<div class="opt-card"><div class="opt-card-title">${label}</div><textarea id="opt-${key}" placeholder="1 รายการต่อบรรทัด">${(o(key)||[]).join('\n')}</textarea><div class="opt-note">key: ${key}</div></div>`).join('');
+  document.getElementById('optsEditor').innerHTML=Object.entries(OPTS_LABELS).map(([key,label])=>`<div class="opt-card"><div class="opt-card-title">${label}</div><textarea id="opt-${key}" placeholder="1 รายการต่อบรรทัด">${(o(key)||[]).join('\n')}</textarea><div class="opt-note">key: ${key}</div></div>`).join('')+consultMapCardHtml();
+  consultMapLoad();
   renderPendingOpts();
+}
+
+// ── ผูกแพทย์กับแผนกที่ Consult (เก็บในรายการ consultDoctors รูปแบบ "แผนก|แพทย์") ──
+function consultMapCardHtml(){
+  return `<div class="opt-card" style="grid-column:1/-1"><div class="opt-card-title">🩺 แพทย์ที่ Consult ตามแผนก</div>
+    <div class="opt-note" style="margin-bottom:8px">เลือกแผนก แล้วติ๊กแพทย์ที่ให้ Consult ในแผนกนั้น กดบันทึกทีละแผนก — แผนกที่ยังไม่ได้ผูก ฟอร์มจะแสดงแพทย์ทั้งหมดให้เลือก (แพทย์มาจากรายการ "แพทย์เจ้าของไข้")</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+      <select id="cmDept" onchange="consultMapLoad()" style="min-width:160px">${(o('consultDept')||[]).map(d=>`<option value="${_ha(d)}">${_ht(d)}</option>`).join('')}</select>
+      <input id="cmFilter" type="text" placeholder="ค้นหาแพทย์..." oninput="consultMapFilter()" style="min-width:160px">
+      <button type="button" class="btn btn-primary btn-sm" onclick="consultMapSave()">💾 บันทึกแผนกนี้</button>
+    </div>
+    <div id="cmDocs" style="max-height:240px;overflow:auto;border:1px solid var(--g200);border-radius:8px;padding:6px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:2px 10px"></div>
+    <div id="cmSummary" class="opt-note" style="margin-top:8px"></div></div>`;
+}
+function consultMapLoad(){
+  const dsel=document.getElementById('cmDept'),box=document.getElementById('cmDocs');
+  if(!dsel||!box)return;
+  const d=dsel.value,mapped=(o('consultDoctors')||[]).filter(x=>String(x).indexOf(d+'|')===0).map(x=>String(x).slice(d.length+1));
+  const docs=(o('doctors')||[]).slice();
+  mapped.forEach(m=>{if(docs.indexOf(m)<0)docs.push(m);});
+  box.innerHTML=docs.map(n=>`<label style="display:flex;gap:6px;align-items:center;font-size:12px;cursor:pointer"><input type="checkbox" value="${_ha(n)}"${mapped.indexOf(n)>=0?' checked':''}> ${_ht(n)}</label>`).join('');
+  const f=document.getElementById('cmFilter');if(f)f.value='';
+  const byDept={};(o('consultDoctors')||[]).forEach(x=>{const i=String(x).indexOf('|');if(i>0){const k=String(x).slice(0,i);byDept[k]=(byDept[k]||0)+1;}});
+  const sum=document.getElementById('cmSummary');
+  if(sum)sum.textContent='ผูกแล้ว: '+(Object.keys(byDept).map(k=>k+' ('+byDept[k]+' คน)').join(' · ')||'ยังไม่มี');
+}
+function consultMapFilter(){
+  const q=(document.getElementById('cmFilter').value||'').trim().toLowerCase();
+  document.querySelectorAll('#cmDocs label').forEach(l=>{l.style.display=!q||l.textContent.toLowerCase().indexOf(q)>=0?'flex':'none';});
+}
+async function consultMapSave(){
+  if(!requireAdmin())return;
+  const d=document.getElementById('cmDept').value;
+  if(!d){toast('กรุณาเลือกแผนก',true);return;}
+  const checked=Array.from(document.querySelectorAll('#cmDocs input:checked')).map(i=>i.value);
+  const items=(o('consultDoctors')||[]).filter(x=>String(x).indexOf(d+'|')!==0).concat(checked.map(n=>d+'|'+n));
+  showLoad('กำลังบันทึก...');
+  try{
+    await api('saveOpts',{},{key:'consultDoctors',values:items});
+    _opts.consultDoctors=items;
+    await api('writeLog',{},{user:currentUser.fullname,action:'ผูกแพทย์ Consult แผนก '+d+' ('+checked.length+' คน)'});
+    toast('บันทึกแพทย์ของแผนก '+d+' แล้ว ✓');
+    consultMapLoad();
+    loadLog();
+  }catch(e){toast(e.message,true);}
+  finally{hideLoad();}
 }
 
 async function renderPendingOpts(){
@@ -5625,7 +5872,6 @@ async function renderUsers(){
   try{
     const users=await api('getUsers');
     _allUsers=users;
-    localStorage.setItem('icu_users_cache',JSON.stringify(users));
     document.getElementById('userTbl').innerHTML=users.map(u=>{
       const isLim=u.viewAccess==='dashboard_bedmap';
       const status=u.status||'approved';
@@ -5654,7 +5900,6 @@ async function renderUsers(){
         </span></td>
       </tr>`;
     }).join('');
-    localStorage.setItem('icu_users_cache',JSON.stringify(users));
   }catch(e){toast(e.message,true);}finally{hideLoad();}
 }
 async function approveUser(id, action){
@@ -5754,7 +5999,7 @@ async function saveUser(){
     const data={username:uname,fullname:fname,role,active,viewAccess:encodeURIComponent(viewAccess||''),hiddenMenus:''};
     if(pwd)data.password=pwd;
     const sp=editUserId?{id:editUserId,...data}:{...data};
-    await api('saveUser',sp,null);
+    await api('saveUser',{},sp);
     if(!editUserId&&!pwd){toast('กรุณากรอกรหัสผ่าน',true);hideLoad();return;}
     closeUserModal();toast('บันทึกสำเร็จ ✓');await renderUsers();
   }

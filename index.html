@@ -1928,7 +1928,7 @@ function hideLoad(){document.getElementById('loadOverlay').classList.remove('ope
 // ทุกครั้งที่ปล่อยเวอร์ชันใหม่: แก้ APP_VERSION ในไฟล์นี้ และ APP_LATEST_VERSION ใน Code.gs ให้เป็นเลขเดียวกัน
 // รูปแบบ 'YYYY-MM-DD.NN' (เทียบเป็นข้อความได้ — เวอร์ชันใหม่กว่าจะมีค่ามากกว่า)
 // ============================================================
-const APP_VERSION='2026-10-17.17';
+const APP_VERSION='2026-10-17.18';
 let _updateDismissedAt=0,_lastUpdateCheck=0;
 
 async function checkAppUpdate(force=false){
@@ -5038,7 +5038,12 @@ async function savePatient(){
   const baseReq={'ชื่อ-สกุล':'ชื่อ-สกุล','HN':'HN','อายุ':'อายุ','สิทธิ':'สิทธิ์','Admit (Date)':'วันที่ Admit','Admit (Time)':'เวลา Admit','เตียง':'เตียง','การรับ':'ประเภทการรับ','ผู้บันทึก Admit':'ผู้บันทึก Admit','Unplanned ICU':'Unplanned ICU','Re-admit ICU':'Re-admit ICU','ประเภทผู้ป่วย':'ประเภทผู้ป่วย','Falling':'Falling score','ผ่าตัด':'ผ่าตัด','Diagnosis แรกรับ':'Diagnosis แรกรับ (Dx)','U/D':'โรคประจำตัว (U/D)'};
   if(data['การรับ']!=='ยกมา') baseReq['Ward ที่รับ']='Ward ที่รับ';
   const missing=Object.entries(baseReq).filter(([k])=>!data[k]).map(([,v])=>v);
-  // บังคับ Apache IV เฉพาะตอนเพิ่มใหม่
+  // แพทย์เจ้าของไข้ และ SOS Score: บังคับกรอก — ผู้ป่วยใหม่ต้องมีเสมอ ส่วนผู้ป่วยเดิมที่ยังไม่เคยมีค่านี้ (บันทึกก่อนมีการบังคับ)
+  // จะไม่ถูกบล็อกตอนแก้อย่างอื่น (เช่น D/C) แต่ถ้าเดิมมีค่าอยู่แล้วจะลบทิ้งให้ว่างไม่ได้
+  const origP=editPtId?(_pts.find(x=>(x.id||String(x._row))===editPtId)||{}):{};
+  [['แพทย์เจ้าของไข้','แพทย์เจ้าของไข้'],['SOS Score','SOS Score (NEWS)']].forEach(([k,label])=>{
+    if(!data[k]&&(!editPtId||String(origP[k]||'').trim()!==''))missing.push(label);
+  });
   if(missing.length){toast('กรุณากรอก: '+missing.join(', '),true);return;}
   // ── Consult: ต้องตอบว่ามีแผนกที่ Consult หรือไม่ (ผู้ป่วยใหม่ หรือเมื่อมีการแก้ส่วนนี้) ถ้า Yes ต้องเลือกแผนกและแพทย์ให้ครบทุกแถว ──
   if(!editPtId||_consultDirty){
@@ -6527,6 +6532,10 @@ async function saveBedEdit(){
     'แพทย์เจ้าของไข้': g('be_doctor'),
     'nurseInCharge': g('be_nurse'),
   };
+  // แพทย์เจ้าของไข้ / NEWS (SOS Score): ถ้าเดิมมีค่าอยู่ ห้ามเว้นว่าง (ไม่ให้ข้ามการบังคับกรอกผ่านหน้านี้)
+  const origQ=_pts.find(x=>(x.id||String(x._row))===_bedEditPid)||{};
+  const blanked=[['แพทย์เจ้าของไข้','แพทย์เจ้าของไข้'],['SOS Score','NEWS']].filter(([k])=>!data[k]&&String(origQ[k]||'').trim()!=='').map(([,l])=>l);
+  if(blanked.length){toast('กรุณากรอก: '+blanked.join(', ')+' (ห้ามเว้นว่าง)',true);return;}
   // คำนวณจำนวนวันของอุปกรณ์ (ไม่งั้นคอลัมน์ (day) จะค้างค่าเก่า และกระทบสถิติรวมวัน)
   const calcDay=(s,e)=>devDays(s,e); // กติกาเดียวกับวันนอน (ขั้นต่ำ 1 วัน, ยังไม่หยุดนับถึงวันนี้)
   data['A-Line (day)']=calcDay(data['A-Line (Start)'],data['A-Line (End)']);

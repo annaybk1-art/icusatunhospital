@@ -1928,7 +1928,7 @@ function hideLoad(){document.getElementById('loadOverlay').classList.remove('ope
 // ทุกครั้งที่ปล่อยเวอร์ชันใหม่: แก้ APP_VERSION ในไฟล์นี้ และ APP_LATEST_VERSION ใน Code.gs ให้เป็นเลขเดียวกัน
 // รูปแบบ 'YYYY-MM-DD.NN' (เทียบเป็นข้อความได้ — เวอร์ชันใหม่กว่าจะมีค่ามากกว่า)
 // ============================================================
-const APP_VERSION='2026-10-17.16';
+const APP_VERSION='2026-10-17.17';
 let _updateDismissedAt=0,_lastUpdateCheck=0;
 
 async function checkAppUpdate(force=false){
@@ -4497,7 +4497,7 @@ function buildForm(p){
       <div id="dcRequireNote" class="req-note" style="display:${isDC?'block':'none'}">🔴 กรุณากรอก D/C ให้ครบ</div>
       <div class="fgrid">
         <div class="fg"><label>สถานะ <span class="req">*</span></label>
-          <select name="สถานะ" id="statusSel" onchange="onStatusChange(this.value)">
+          <select name="สถานะ" id="statusSel" onchange="_dcAutoSet=false;onStatusChange(this.value)">
             <option value="กำลัง admit" ${!isDC?'selected':''}>กำลัง admit</option>
             <option value="จำหน่ายแล้ว" ${isDC?'selected':''}>จำหน่ายแล้ว</option>
           </select>
@@ -4622,7 +4622,7 @@ function buildForm(p){
   }
 
   document.getElementById('modalBd').innerHTML=MODAL_TABS.map((t,i)=>`<div class="modal-panel${i===0?' active':''}" id="${t.id}">${panels[t.id]||''}</div>`).join('');
-  setTimeout(()=>{setupAutoCalc();initConsultSurgery();if(isDC)onStatusChange('จำหน่ายแล้ว');document.addEventListener('click',function h(e){if(!e.target.closest('.msd-wrap'))document.querySelectorAll('.msd-list.open').forEach(l=>l.classList.remove('open'));});},50);
+  setTimeout(()=>{setupAutoCalc();initConsultSurgery();initDcAutoStatus();if(isDC)onStatusChange('จำหน่ายแล้ว');document.addEventListener('click',function h(e){if(!e.target.closest('.msd-wrap'))document.querySelectorAll('.msd-list.open').forEach(l=>l.classList.remove('open'));});},50);
 }
 
 // ============================================================
@@ -4785,6 +4785,20 @@ function onDCReasonChange(v){
   const referBox=document.getElementById('referReasonBox');
   if(deadBox) deadBox.style.display=v==='Dead'?'block':'none';
   if(referBox) referBox.style.display=v==='Refer'?'block':'none';
+}
+let _dcAutoSet=false;
+// กรอกวันที่ D/C → เปลี่ยนสถานะเป็น "จำหน่ายแล้ว" ให้เอง (จะได้ตรวจ D/C และวันหยุดอุปกรณ์ครบ) ; ล้างวันที่ → คืนเป็น "กำลัง admit" ถ้าระบบเป็นคนเปลี่ยนเอง
+function onDcDateChange(){
+  const d=document.querySelector('#modalBd [name="D/C (Date)"]'),st=document.getElementById('statusSel');
+  if(!d||!st)return;
+  if(d.value){
+    if(st.value!=='จำหน่ายแล้ว'&&!dcMatch((document.querySelector('#modalBd [name="เหตุผลจำหน่าย"]')||{}).value,'carryover')){st.value='จำหน่ายแล้ว';_dcAutoSet=true;onStatusChange('จำหน่ายแล้ว');}
+  }else if(_dcAutoSet){st.value='กำลัง admit';_dcAutoSet=false;onStatusChange('กำลัง admit');}
+}
+function initDcAutoStatus(){
+  _dcAutoSet=false;
+  const d=document.querySelector('#modalBd [name="D/C (Date)"]');
+  if(d)d.addEventListener('change',onDcDateChange);
 }
 function onStatusChange(val){const isDC=val==='จำหน่ายแล้ว';const n=document.getElementById('dcRequireNote');if(n)n.style.display=isDC?'block':'none';}
 
@@ -5056,7 +5070,9 @@ async function savePatient(){
       if(!confirm){hideLoad();return;}
     }
   }
-  if(data['สถานะ']==='จำหน่ายแล้ว'){
+  // ถือว่าจำหน่ายแล้ว ถ้าเลือกสถานะ "จำหน่ายแล้ว" หรือมีวันที่ D/C (ยกเว้นแถวที่ยกยอดเดือน "ค้างเดือน") — กันกรอกแค่วันที่ D/C แล้วข้ามการตรวจ
+  const isDischarge=data['สถานะ']==='จำหน่ายแล้ว'||(!!data['D/C (Date)']&&!dcMatch(data['เหตุผลจำหน่าย'],'carryover'));
+  if(isDischarge){
     const dcReq={'D/C (Date)':'วันที่ D/C','D/C (Time)':'เวลา D/C','เหตุผลจำหน่าย':'เหตุผลจำหน่าย','CPR':'CPR','Palliative':'Palliative'};
     if(data['เหตุผลจำหน่าย']!=='Dead') dcReq['Ward/Hospital']='Ward/Hospital';
     const mDC=Object.entries(dcReq).filter(([k])=>!data[k]).map(([,v])=>v);
